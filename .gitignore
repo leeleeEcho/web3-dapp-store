@@ -1,0 +1,65 @@
+# Android
+*.iml
+.gradle/
+local.properties
+.idea/
+*.hprof
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Kotlin
+*.class
+*.log
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Backend
+backend/build/
+backend/.gradle/
+backend/out/
+backend/*.log
+
+# Docker
+*.env.local
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Secrets
+*.keystore
+*.jks
+secrets/
+.env
+
+# References (cloned separately, not tracked in main repo)
+refs/fdroidserver/
+refs/neo-store/
+refs/seed-vault-sdk/
+refs/sol4k/
+refs/solana-mwa/
+refs/wallet-core/
+refs/walletconnect-kotlin/
+refs/trust-web3-provider/
