@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,7 +20,11 @@ import androidx.navigation.navArgument
 import com.web3store.ui.components.BottomNavItem
 import com.web3store.ui.components.DIBottomNavigation
 import com.web3store.ui.detail.AppDetailScreen
+import com.web3store.ui.explore.ExploreScreen
 import com.web3store.ui.home.HomeScreen
+import com.web3store.ui.profile.ProfileScreen
+import com.web3store.ui.search.SearchScreen
+import com.web3store.ui.wallet.WalletScreen
 import com.web3store.ui.theme.DIColors
 import com.web3store.ui.theme.Web3StoreTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -124,8 +129,14 @@ fun MainApp() {
                 enterTransition = { fadeIn() },
                 exitTransition = { fadeOut() }
             ) {
-                // TODO: Implement ExploreScreen
-                PlaceholderScreen(title = "Explore")
+                ExploreScreen(
+                    onAppClick = { appId ->
+                        navController.navigate("app/$appId")
+                    },
+                    onCategoryClick = { category ->
+                        navController.navigate("category/$category")
+                    }
+                )
             }
 
             // Search
@@ -134,8 +145,11 @@ fun MainApp() {
                 enterTransition = { fadeIn() },
                 exitTransition = { fadeOut() }
             ) {
-                // TODO: Implement SearchScreen
-                PlaceholderScreen(title = "Search")
+                SearchScreen(
+                    onAppClick = { appId ->
+                        navController.navigate("app/$appId")
+                    }
+                )
             }
 
             // Wallet
@@ -144,8 +158,11 @@ fun MainApp() {
                 enterTransition = { fadeIn() },
                 exitTransition = { fadeOut() }
             ) {
-                // TODO: Implement WalletScreen
-                PlaceholderScreen(title = "Wallet")
+                WalletScreen(
+                    onConnectWallet = { /* Handle wallet connection */ },
+                    onTokenClick = { /* Handle token click */ },
+                    onNFTClick = { /* Handle NFT click */ }
+                )
             }
 
             // Profile
@@ -154,8 +171,12 @@ fun MainApp() {
                 enterTransition = { fadeIn() },
                 exitTransition = { fadeOut() }
             ) {
-                // TODO: Implement ProfileScreen
-                PlaceholderScreen(title = "Profile")
+                ProfileScreen(
+                    onSettingsClick = { /* Handle settings */ },
+                    onMyAppsClick = { /* Handle my apps */ },
+                    onSecurityClick = { /* Handle security */ },
+                    onAboutClick = { /* Handle about */ }
+                )
             }
 
             // App Detail

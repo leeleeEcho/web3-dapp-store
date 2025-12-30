@@ -63,6 +63,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
     // Hilt DI
@@ -84,13 +85,13 @@ dependencies {
     // Web3 Dependencies
     implementation("org.web3j:core:4.8.7-android")
 
-    // WalletConnect
-    implementation(platform("com.walletconnect:android-bom:1.28.0"))
-    implementation("com.walletconnect:android-core")
-    implementation("com.walletconnect:web3wallet")
+    // WalletConnect - TODO: Add GitHub Packages authentication
+    // implementation(platform("com.walletconnect:android-bom:1.28.0"))
+    // implementation("com.walletconnect:android-core")
+    // implementation("com.walletconnect:web3wallet")
 
-    // Solana
-    implementation("com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.0.0")
+    // Solana - TODO: Add proper repository
+    // implementation("com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.0.0")
 
     // Security
     implementation("androidx.security:security-crypto:1.1.0-alpha06")

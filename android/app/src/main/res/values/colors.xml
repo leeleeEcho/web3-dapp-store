@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- DI Brand Colors -->
+    <color name="di_black">#FF000000</color>
+    <color name="di_gold">#FFD4AF37</color>
+    <color name="di_gold_bright">#FFF5A623</color>
+    <color name="di_surface">#FF0D0D0D</color>
+    <color name="di_card">#FF141414</color>
+    <color name="di_text_secondary">#FFA0A0A0</color>
+
+    <!-- Icon colors -->
+    <color name="ic_launcher_background">#FF000000</color>
+    <color name="ic_launcher_foreground">#FFD4AF37</color>
+</resources>

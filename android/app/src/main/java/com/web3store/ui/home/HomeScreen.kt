@@ -169,17 +169,7 @@ fun HomeScreen(
                     chains = app.chains,
                     onClick = { onAppClick(app.id) },
                     onGetClick = { /* Handle install */ },
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .animateEnterExit(
-                            enter = fadeIn() + slideInVertically(
-                                initialOffsetY = { it / 2 },
-                                animationSpec = tween(
-                                    durationMillis = 300,
-                                    delayMillis = index * 50
-                                )
-                            )
-                        )
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
 
