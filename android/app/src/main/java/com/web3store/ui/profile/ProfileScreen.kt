@@ -1,10 +1,10 @@
 package com.web3store.ui.profile
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,58 +17,44 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.web3store.ui.theme.DIColors
 
-data class MenuItem(
-    val icon: ImageVector,
-    val title: String,
-    val subtitle: String? = null,
-    val showBadge: Boolean = false
+data class InstalledApp(
+    val id: String,
+    val name: String,
+    val lastUsed: String,
+    val color: Color = DIColors.Primary
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    onWalletClick: () -> Unit,
+    onAppClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
-    onMyAppsClick: () -> Unit,
-    onSecurityClick: () -> Unit,
-    onAboutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val installedAppsCount = remember { 12 }
-    val connectedChains = remember { 5 }
-
-    val menuItems = remember {
+    val installedApps = remember {
         listOf(
-            MenuItem(Icons.Outlined.Apps, "My dApps", "$installedAppsCount installed"),
-            MenuItem(Icons.Outlined.Favorite, "Favorites", "23 saved"),
-            MenuItem(Icons.Outlined.History, "Recently Used", "View history"),
-            MenuItem(Icons.Outlined.Link, "Connected Sites", "$connectedChains active"),
-        )
-    }
-
-    val settingsItems = remember {
-        listOf(
-            MenuItem(Icons.Outlined.Security, "Security", "Biometric, PIN"),
-            MenuItem(Icons.Outlined.Notifications, "Notifications", showBadge = true),
-            MenuItem(Icons.Outlined.Language, "Language", "English"),
-            MenuItem(Icons.Outlined.DarkMode, "Appearance", "Dark"),
-            MenuItem(Icons.Outlined.Storage, "Network & Cache"),
-            MenuItem(Icons.Outlined.Info, "About", "Version 1.0.0"),
+            InstalledApp("1", "MetaMask", "刚刚使用", Color(0xFFF6851B)),
+            InstalledApp("2", "Uniswap", "1小时前", Color(0xFFFF007A)),
+            InstalledApp("3", "OpenSea", "昨天", Color(0xFF2081E2)),
+            InstalledApp("4", "Aave", "3天前", Color(0xFF2EBAC6))
         )
     }
 
     Scaffold(
-        modifier = modifier.background(DIColors.Background),
+        modifier = modifier,
         containerColor = DIColors.Background,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Profile",
+                        text = "我的",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = DIColors.Primary
@@ -78,13 +64,13 @@ fun ProfileScreen(
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Outlined.Settings,
-                            contentDescription = "Settings",
+                            contentDescription = "设置",
                             tint = DIColors.TextPrimary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DIColors.Background.copy(alpha = 0.95f)
+                    containerColor = DIColors.Background
                 )
             )
         }
@@ -93,261 +79,264 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // Profile Header
+            // Wallet Card
             item {
-                ProfileHeader()
-            }
-
-            // Stats Row
-            item {
-                StatsRow(
-                    installedApps = installedAppsCount,
-                    connectedChains = connectedChains
+                WalletCard(
+                    address = "0x1234...5678",
+                    balance = "$12,345.67",
+                    onClick = onWalletClick
                 )
             }
 
-            // My dApps Section
-            item {
-                Text(
-                    text = "My dApps",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = DIColors.TextPrimary,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-
-            items(menuItems) { item ->
-                MenuListItem(
-                    item = item,
-                    onClick = {
-                        when (item.title) {
-                            "My dApps" -> onMyAppsClick()
-                            else -> { }
-                        }
-                    }
-                )
-            }
-
-            // Settings Section
-            item {
-                Text(
-                    text = "Settings",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = DIColors.TextPrimary,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-
-            items(settingsItems) { item ->
-                MenuListItem(
-                    item = item,
-                    onClick = {
-                        when (item.title) {
-                            "Security" -> onSecurityClick()
-                            "About" -> onAboutClick()
-                            else -> { }
-                        }
-                    }
-                )
-            }
-
-            // Sign Out Button
+            // Quick Actions
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                OutlinedButton(
-                    onClick = { /* Handle sign out */ },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = DIColors.Error
-                    ),
-                    border = BorderStroke(1.dp, DIColors.Error)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Logout,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                    QuickAction(
+                        icon = Icons.Outlined.Download,
+                        label = "已安装",
+                        count = "12",
+                        onClick = { }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Disconnect Wallet")
+                    QuickAction(
+                        icon = Icons.Outlined.Favorite,
+                        label = "收藏",
+                        count = "8",
+                        onClick = { }
+                    )
+                    QuickAction(
+                        icon = Icons.Outlined.History,
+                        label = "历史",
+                        count = "",
+                        onClick = { }
+                    )
+                    QuickAction(
+                        icon = Icons.Outlined.Star,
+                        label = "评价",
+                        count = "3",
+                        onClick = { }
+                    )
                 }
             }
 
-            // Bottom spacing
+            // Recently Used Apps
             item {
-                Spacer(modifier = Modifier.height(80.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "最近使用",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = DIColors.TextPrimary
+                    )
+                    TextButton(onClick = { }) {
+                        Text("管理", color = DIColors.Primary)
+                    }
+                }
+            }
+
+            item {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(installedApps) { app ->
+                        RecentAppCard(
+                            app = app,
+                            onClick = { onAppClick(app.id) }
+                        )
+                    }
+                }
+            }
+
+            // Menu Items
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "账户与设置",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = DIColors.TextPrimary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
+            item {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    MenuItemRow(
+                        icon = Icons.Outlined.AccountBalanceWallet,
+                        title = "钱包管理",
+                        subtitle = "查看资产、交易记录",
+                        onClick = onWalletClick
+                    )
+                    MenuItemRow(
+                        icon = Icons.Outlined.Notifications,
+                        title = "通知设置",
+                        subtitle = "应用更新、交易提醒",
+                        onClick = { }
+                    )
+                    MenuItemRow(
+                        icon = Icons.Outlined.Security,
+                        title = "安全中心",
+                        subtitle = "密码、生物识别",
+                        onClick = { }
+                    )
+                    MenuItemRow(
+                        icon = Icons.Outlined.Language,
+                        title = "语言",
+                        subtitle = "简体中文",
+                        onClick = { }
+                    )
+                    MenuItemRow(
+                        icon = Icons.Outlined.Info,
+                        title = "关于",
+                        subtitle = "版本 1.0.0",
+                        onClick = { }
+                    )
+                    MenuItemRow(
+                        icon = Icons.Outlined.Help,
+                        title = "帮助与反馈",
+                        subtitle = "",
+                        onClick = { }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ProfileHeader(
-    modifier: Modifier = Modifier
+private fun WalletCard(
+    address: String,
+    balance: String,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = DIColors.Card)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(DIColors.Primary, DIColors.Secondary)
+                    )
+                )
+                .padding(20.dp)
         ) {
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(DIColors.Primary, DIColors.Secondary)
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Text(
+                            text = address,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = balance,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "总资产",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                }
+
                 Icon(
-                    imageVector = Icons.Default.Person,
+                    imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = DIColors.Background,
+                    tint = Color.White.copy(alpha = 0.7f),
                     modifier = Modifier.size(32.dp)
                 )
             }
-
-            // User Info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "0x1234...5678",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = DIColors.TextPrimary
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(DIColors.Success)
-                    )
-                    Text(
-                        text = "Connected",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = DIColors.TextSecondary
-                    )
-                }
-            }
-
-            // Copy & QR buttons
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(
-                    onClick = { /* Copy address */ },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(DIColors.Surface)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy",
-                        tint = DIColors.TextPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                IconButton(
-                    onClick = { /* Show QR */ },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(DIColors.Surface)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.QrCode,
-                        contentDescription = "QR Code",
-                        tint = DIColors.TextPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun StatsRow(
-    installedApps: Int,
-    connectedChains: Int,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        StatCard(
-            value = installedApps.toString(),
-            label = "Installed",
-            icon = Icons.Outlined.Apps,
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            value = connectedChains.toString(),
-            label = "Chains",
-            icon = Icons.Outlined.Link,
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            value = "23",
-            label = "Favorites",
-            icon = Icons.Outlined.Favorite,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun StatCard(
-    value: String,
-    label: String,
+private fun QuickAction(
     icon: ImageVector,
-    modifier: Modifier = Modifier
+    label: String,
+    count: String,
+    onClick: () -> Unit
 ) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DIColors.Card)
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(DIColors.Card),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = label,
                 tint = DIColors.Primary,
                 modifier = Modifier.size(24.dp)
             )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = DIColors.TextPrimary
+        )
+        if (count.isNotEmpty()) {
             Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = DIColors.TextPrimary
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
+                text = count,
+                style = MaterialTheme.typography.labelSmall,
                 color = DIColors.TextSecondary
             )
         }
@@ -355,13 +344,60 @@ private fun StatCard(
 }
 
 @Composable
-private fun MenuListItem(
-    item: MenuItem,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+private fun RecentAppCard(
+    app: InstalledApp,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = modifier
+        modifier = Modifier
+            .width(100.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = DIColors.Card)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(app.color),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = app.name.take(2),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = app.name,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                color = DIColors.TextPrimary
+            )
+            Text(
+                text = app.lastUsed,
+                style = MaterialTheme.typography.labelSmall,
+                color = DIColors.TextSecondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun MenuItemRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
@@ -371,47 +407,23 @@ private fun MenuListItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(DIColors.Surface),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = null,
-                    tint = DIColors.Primary,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            // Title & Subtitle
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = DIColors.Primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = DIColors.TextPrimary
-                    )
-                    if (item.showBadge) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(DIColors.Primary)
-                        )
-                    }
-                }
-                item.subtitle?.let { subtitle ->
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = DIColors.TextPrimary
+                )
+                if (subtitle.isNotEmpty()) {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
@@ -419,8 +431,6 @@ private fun MenuListItem(
                     )
                 }
             }
-
-            // Arrow
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,

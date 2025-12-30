@@ -17,13 +17,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.web3store.ui.apps.AppsScreen
 import com.web3store.ui.components.BottomNavItem
 import com.web3store.ui.components.DIBottomNavigation
 import com.web3store.ui.detail.AppDetailScreen
-import com.web3store.ui.explore.ExploreScreen
+import com.web3store.ui.games.GamesScreen
 import com.web3store.ui.home.HomeScreen
 import com.web3store.ui.profile.ProfileScreen
 import com.web3store.ui.search.SearchScreen
+import com.web3store.ui.updates.UpdatesScreen
 import com.web3store.ui.wallet.WalletScreen
 import com.web3store.ui.theme.DIColors
 import com.web3store.ui.theme.Web3StoreTheme
@@ -52,9 +54,9 @@ fun MainApp() {
     val showBottomNav = remember(currentRoute) {
         currentRoute in listOf(
             BottomNavItem.Home.route,
-            BottomNavItem.Explore.route,
-            BottomNavItem.Search.route,
-            BottomNavItem.Wallet.route,
+            BottomNavItem.Games.route,
+            BottomNavItem.Apps.route,
+            BottomNavItem.Updates.route,
             BottomNavItem.Profile.route
         )
     }
@@ -63,9 +65,9 @@ fun MainApp() {
     val selectedNavItem = remember(currentRoute) {
         when (currentRoute) {
             BottomNavItem.Home.route -> BottomNavItem.Home
-            BottomNavItem.Explore.route -> BottomNavItem.Explore
-            BottomNavItem.Search.route -> BottomNavItem.Search
-            BottomNavItem.Wallet.route -> BottomNavItem.Wallet
+            BottomNavItem.Games.route -> BottomNavItem.Games
+            BottomNavItem.Apps.route -> BottomNavItem.Apps
+            BottomNavItem.Updates.route -> BottomNavItem.Updates
             BottomNavItem.Profile.route -> BottomNavItem.Profile
             else -> BottomNavItem.Home
         }
@@ -114,54 +116,60 @@ fun MainApp() {
                     onAppClick = { appId ->
                         navController.navigate("app/$appId")
                     },
-                    onCategoryClick = { category ->
-                        navController.navigate("category/$category")
+                    onSearchClick = {
+                        navController.navigate("search")
                     },
                     onWalletClick = {
-                        navController.navigate(BottomNavItem.Wallet.route)
+                        navController.navigate("wallet")
+                    },
+                    onNotificationClick = {
+                        // Handle notification
                     }
                 )
             }
 
-            // Explore
+            // Games
             composable(
-                route = BottomNavItem.Explore.route,
+                route = BottomNavItem.Games.route,
                 enterTransition = { fadeIn() },
                 exitTransition = { fadeOut() }
             ) {
-                ExploreScreen(
+                GamesScreen(
+                    onGameClick = { gameId ->
+                        navController.navigate("app/$gameId")
+                    },
+                    onSearchClick = {
+                        navController.navigate("search")
+                    }
+                )
+            }
+
+            // Apps
+            composable(
+                route = BottomNavItem.Apps.route,
+                enterTransition = { fadeIn() },
+                exitTransition = { fadeOut() }
+            ) {
+                AppsScreen(
                     onAppClick = { appId ->
                         navController.navigate("app/$appId")
                     },
-                    onCategoryClick = { category ->
-                        navController.navigate("category/$category")
+                    onSearchClick = {
+                        navController.navigate("search")
                     }
                 )
             }
 
-            // Search
+            // Updates
             composable(
-                route = BottomNavItem.Search.route,
+                route = BottomNavItem.Updates.route,
                 enterTransition = { fadeIn() },
                 exitTransition = { fadeOut() }
             ) {
-                SearchScreen(
+                UpdatesScreen(
                     onAppClick = { appId ->
                         navController.navigate("app/$appId")
                     }
-                )
-            }
-
-            // Wallet
-            composable(
-                route = BottomNavItem.Wallet.route,
-                enterTransition = { fadeIn() },
-                exitTransition = { fadeOut() }
-            ) {
-                WalletScreen(
-                    onConnectWallet = { /* Handle wallet connection */ },
-                    onTokenClick = { /* Handle token click */ },
-                    onNFTClick = { /* Handle NFT click */ }
                 )
             }
 
@@ -172,10 +180,41 @@ fun MainApp() {
                 exitTransition = { fadeOut() }
             ) {
                 ProfileScreen(
-                    onSettingsClick = { /* Handle settings */ },
-                    onMyAppsClick = { /* Handle my apps */ },
-                    onSecurityClick = { /* Handle security */ },
-                    onAboutClick = { /* Handle about */ }
+                    onWalletClick = {
+                        navController.navigate("wallet")
+                    },
+                    onAppClick = { appId ->
+                        navController.navigate("app/$appId")
+                    },
+                    onSettingsClick = {
+                        // Handle settings
+                    }
+                )
+            }
+
+            // Search
+            composable(
+                route = "search",
+                enterTransition = { slideInVertically(initialOffsetY = { it }) + fadeIn() },
+                exitTransition = { slideOutVertically(targetOffsetY = { it }) + fadeOut() }
+            ) {
+                SearchScreen(
+                    onAppClick = { appId ->
+                        navController.navigate("app/$appId")
+                    }
+                )
+            }
+
+            // Wallet
+            composable(
+                route = "wallet",
+                enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                exitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+            ) {
+                WalletScreen(
+                    onConnectWallet = { },
+                    onTokenClick = { },
+                    onNFTClick = { }
                 )
             }
 
@@ -193,34 +232,6 @@ fun MainApp() {
                     onInstallClick = { /* Handle install */ }
                 )
             }
-
-            // Category
-            composable(
-                route = "category/{category}",
-                arguments = listOf(navArgument("category") { type = NavType.StringType }),
-                enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
-                exitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
-            ) { backStackEntry ->
-                val category = backStackEntry.arguments?.getString("category") ?: ""
-                // TODO: Implement CategoryScreen
-                PlaceholderScreen(title = "Category: $category")
-            }
         }
-    }
-}
-
-@Composable
-fun PlaceholderScreen(title: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DIColors.Background),
-        contentAlignment = androidx.compose.ui.Alignment.Center
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = DIColors.TextPrimary
-        )
     }
 }

@@ -13,8 +13,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.SportsEsports
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,21 +28,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.web3store.ui.theme.DIColors
 
 enum class BottomNavItem(
     val label: String,
-    val icon: ImageVector,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
     val route: String
 ) {
-    Home("Home", Icons.Default.Home, "home"),
-    Explore("Explore", Icons.Outlined.Explore, "explore"),
-    Search("Search", Icons.Default.Search, "search"),
-    Wallet("Wallet", Icons.Default.Home, "wallet"), // Replace with wallet icon
-    Profile("Profile", Icons.Default.Person, "profile")
+    Home("首页", Icons.Filled.Home, Icons.Outlined.Home, "home"),
+    Games("游戏", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports, "games"),
+    Apps("应用", Icons.Filled.Apps, Icons.Outlined.Apps, "apps"),
+    Updates("更新", Icons.Filled.Update, Icons.Outlined.Update, "updates"),
+    Profile("我的", Icons.Filled.Person, Icons.Outlined.Person, "profile")
 }
 
 @Composable
@@ -47,14 +53,13 @@ fun DIBottomNavigation(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = DIColors.Card.copy(alpha = 0.95f),
-        shadowElevation = 8.dp,
-        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
+        color = DIColors.Card.copy(alpha = 0.98f),
+        shadowElevation = 8.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -77,7 +82,7 @@ private fun DIBottomNavItem(
     modifier: Modifier = Modifier
 ) {
     val animatedScale by animateFloatAsState(
-        targetValue = if (selected) 1.1f else 1f,
+        targetValue = if (selected) 1.05f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -98,12 +103,12 @@ private fun DIBottomNavItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Icon(
-            imageVector = item.icon,
+            imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
             contentDescription = item.label,
             modifier = Modifier
                 .size(24.dp)
@@ -117,17 +122,5 @@ private fun DIBottomNavItem(
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             color = animatedColor
         )
-
-        // Active indicator dot
-        if (selected) {
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(DIColors.Primary)
-            )
-        } else {
-            Spacer(modifier = Modifier.size(4.dp))
-        }
     }
 }

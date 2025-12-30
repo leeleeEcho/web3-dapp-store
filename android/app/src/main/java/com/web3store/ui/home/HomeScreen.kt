@@ -1,236 +1,539 @@
 package com.web3store.ui.home
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import com.web3store.ui.components.*
+import androidx.compose.ui.unit.sp
 import com.web3store.ui.theme.DIColors
 
-// Data classes
 data class FeaturedApp(
     val id: String,
     val name: String,
     val tagline: String,
     val imageUrl: String,
-    val chains: List<String>
+    val gradient: List<Color>
 )
 
-data class PopularApp(
+data class AppItem(
     val id: String,
     val name: String,
+    val developer: String,
     val iconUrl: String,
     val rating: Float,
-    val downloads: String,
-    val chains: List<String>
+    val size: String,
+    val category: String
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onAppClick: (String) -> Unit,
-    onCategoryClick: (String) -> Unit,
+    onSearchClick: () -> Unit,
     onWalletClick: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("All") }
-
-    val categories = listOf("All", "DeFi", "NFT", "GameFi", "Social", "DAO", "Tools")
-
-    // Sample data
     val featuredApps = remember {
         listOf(
-            FeaturedApp("1", "UniSwap", "Leading decentralized exchange", "https://via.placeholder.com/280x160", listOf("ETH")),
-            FeaturedApp("2", "OpenSea", "World's largest NFT marketplace", "https://via.placeholder.com/280x160", listOf("ETH", "SOL")),
-            FeaturedApp("3", "Axie Infinity", "Play to earn blockchain game", "https://via.placeholder.com/280x160", listOf("ETH"))
+            FeaturedApp("1", "Uniswap", "去中心化交易所", "", listOf(Color(0xFFFF007A), Color(0xFF9B00FF))),
+            FeaturedApp("2", "OpenSea", "全球最大NFT市场", "", listOf(Color(0xFF2081E2), Color(0xFF1868B7))),
+            FeaturedApp("3", "Axie Infinity", "边玩边赚GameFi", "", listOf(Color(0xFF00B4D8), Color(0xFF0077B6)))
         )
     }
 
-    val popularApps = remember {
+    val recommendedApps = remember {
         listOf(
-            PopularApp("1", "Aave", "https://via.placeholder.com/56", 4.8f, "2.5M", listOf("ETH", "SOL")),
-            PopularApp("2", "Curve Finance", "https://via.placeholder.com/56", 4.7f, "1.8M", listOf("ETH")),
-            PopularApp("3", "Rarible", "https://via.placeholder.com/56", 4.6f, "1.2M", listOf("ETH", "SOL")),
-            PopularApp("4", "PancakeSwap", "https://via.placeholder.com/56", 4.9f, "3.1M", listOf("BSC")),
-            PopularApp("5", "MetaMask", "https://via.placeholder.com/56", 4.5f, "5.2M", listOf("ETH"))
+            AppItem("1", "MetaMask", "ConsenSys", "", 4.5f, "32 MB", "工具"),
+            AppItem("2", "Uniswap", "Uniswap Labs", "", 4.8f, "28 MB", "金融"),
+            AppItem("3", "OpenSea", "OpenSea", "", 4.3f, "45 MB", "NFT"),
+            AppItem("4", "Aave", "Aave Labs", "", 4.6f, "22 MB", "金融"),
+            AppItem("5", "Blur", "Blur Inc", "", 4.4f, "38 MB", "NFT")
+        )
+    }
+
+    val topCharts = remember {
+        listOf(
+            AppItem("6", "PancakeSwap", "PancakeSwap", "", 4.7f, "25 MB", "金融"),
+            AppItem("7", "Raydium", "Raydium", "", 4.5f, "30 MB", "金融"),
+            AppItem("8", "Magic Eden", "Magic Eden", "", 4.6f, "42 MB", "NFT"),
+            AppItem("9", "StepN", "Find Satoshi Lab", "", 4.2f, "85 MB", "健康"),
+            AppItem("10", "Axie Infinity", "Sky Mavis", "", 4.4f, "120 MB", "游戏")
         )
     }
 
     Scaffold(
-        modifier = modifier.background(DIColors.Background),
+        modifier = modifier,
+        containerColor = DIColors.Background,
         topBar = {
             HomeTopBar(
-                walletAddress = "0x1a2b...3c4d",
-                onWalletClick = onWalletClick
+                onSearchClick = onSearchClick,
+                onWalletClick = onWalletClick,
+                onNotificationClick = onNotificationClick
             )
-        },
-        containerColor = DIColors.Background
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // Search Bar
+            // Featured Banner Carousel
             item {
-                DISearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    onSearch = { /* Handle search */ },
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-            }
+                val pagerState = rememberPagerState(pageCount = { featuredApps.size })
 
-            // Featured Section
-            item {
                 Column {
-                    Text(
-                        text = "Featured",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = DIColors.TextPrimary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        pageSpacing = 12.dp
+                    ) { page ->
+                        FeaturedBanner(
+                            app = featuredApps[page],
+                            onClick = { onAppClick(featuredApps[page].id) }
+                        )
+                    }
+
+                    // Page indicators
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        items(featuredApps) { app ->
-                            FeaturedAppCard(
-                                name = app.name,
-                                tagline = app.tagline,
-                                imageUrl = app.imageUrl,
-                                chains = app.chains,
-                                onClick = { onAppClick(app.id) }
+                        repeat(featuredApps.size) { index ->
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 3.dp)
+                                    .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (pagerState.currentPage == index) DIColors.Primary
+                                        else DIColors.TextSecondary.copy(alpha = 0.3f)
+                                    )
                             )
                         }
                     }
                 }
             }
 
-            // Category Chips
+            // Recommended for you
+            item {
+                SectionHeader(title = "为你推荐", onSeeAllClick = { })
+            }
+
             item {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(categories) { category ->
-                        CategoryChip(
-                            text = category,
-                            selected = category == selectedCategory,
-                            onClick = {
-                                selectedCategory = category
-                                if (category != "All") {
-                                    onCategoryClick(category.lowercase())
-                                }
-                            }
+                    items(recommendedApps) { app ->
+                        AppCard(
+                            app = app,
+                            onClick = { onAppClick(app.id) }
                         )
                     }
                 }
             }
 
-            // Popular Apps Section
+            // Top Charts
             item {
+                Spacer(modifier = Modifier.height(24.dp))
+                SectionHeader(title = "热门排行", onSeeAllClick = { })
+            }
+
+            item {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    topCharts.take(5).forEachIndexed { index, app ->
+                        RankedAppRow(
+                            rank = index + 1,
+                            app = app,
+                            onClick = { onAppClick(app.id) }
+                        )
+                        if (index < 4) {
+                            Divider(
+                                color = DIColors.Border,
+                                modifier = Modifier.padding(start = 56.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // New & Updated
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                SectionHeader(title = "新上架", onSeeAllClick = { })
+            }
+
+            item {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(recommendedApps.reversed()) { app ->
+                        AppCard(
+                            app = app,
+                            onClick = { onAppClick(app.id) }
+                        )
+                    }
+                }
+            }
+
+            // Categories quick access
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                SectionHeader(title = "分类浏览", onSeeAllClick = { })
+            }
+
+            item {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val categories = listOf(
+                        "DeFi" to DIColors.Primary,
+                        "NFT" to Color(0xFF9945FF),
+                        "游戏" to Color(0xFF14F195),
+                        "社交" to Color(0xFFFF6B9D),
+                        "工具" to Color(0xFF00D4FF)
+                    )
+                    items(categories) { (name, color) ->
+                        CategoryChip(
+                            name = name,
+                            color = color,
+                            onClick = { }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeTopBar(
+    onSearchClick: () -> Unit,
+    onWalletClick: () -> Unit,
+    onNotificationClick: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            // Search bar
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 8.dp)
+                    .clickable(onClick = onSearchClick),
+                shape = RoundedCornerShape(24.dp),
+                color = DIColors.Card
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "搜索",
+                        tint = DIColors.TextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "搜索应用和游戏",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DIColors.TextSecondary
+                    )
+                }
+            }
+        },
+        actions = {
+            IconButton(onClick = onWalletClick) {
+                Icon(
+                    imageVector = Icons.Default.AccountBalanceWallet,
+                    contentDescription = "钱包",
+                    tint = DIColors.Primary
+                )
+            }
+            IconButton(onClick = onNotificationClick) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "通知",
+                    tint = DIColors.TextPrimary
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = DIColors.Background
+        )
+    )
+}
+
+@Composable
+private fun FeaturedBanner(
+    app: FeaturedApp,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.horizontalGradient(app.gradient))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = "Popular Apps",
-                    style = MaterialTheme.typography.headlineSmall,
+                    text = app.name,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = DIColors.TextPrimary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    color = Color.White
                 )
-            }
-
-            itemsIndexed(popularApps) { index, app ->
-                AppListCard(
-                    name = app.name,
-                    iconUrl = app.iconUrl,
-                    rating = app.rating,
-                    downloads = app.downloads,
-                    chains = app.chains,
-                    onClick = { onAppClick(app.id) },
-                    onGetClick = { /* Handle install */ },
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = app.tagline,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.9f)
                 )
-            }
-
-            // Bottom spacing for navigation bar
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(alpha = 0.2f)
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "安装",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun HomeTopBar(
-    walletAddress: String,
-    onWalletClick: () -> Unit,
-    modifier: Modifier = Modifier
+private fun SectionHeader(
+    title: String,
+    onSeeAllClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = DIColors.TextPrimary
+        )
+        TextButton(onClick = onSeeAllClick) {
+            Text(
+                text = "查看全部",
+                color = DIColors.Primary,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppCard(
+    app: AppItem,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .width(100.dp)
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // App Icon
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(DIColors.Card),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = app.name.take(2),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = DIColors.Primary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = app.name,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = DIColors.TextPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = app.rating.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = DIColors.TextSecondary
+            )
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = DIColors.TextSecondary,
+                modifier = Modifier.size(10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun RankedAppRow(
+    rank: Int,
+    app: AppItem,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Rank number
+        Text(
+            text = rank.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (rank <= 3) DIColors.Primary else DIColors.TextSecondary,
+            modifier = Modifier.width(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // App Icon
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(DIColors.Card),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = app.name.take(2),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = DIColors.Primary
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // App info
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = app.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = DIColors.TextPrimary
+            )
+            Text(
+                text = app.developer,
+                style = MaterialTheme.typography.bodySmall,
+                color = DIColors.TextSecondary
+            )
+        }
+
+        // Rating
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = app.rating.toString(),
+                style = MaterialTheme.typography.bodySmall,
+                color = DIColors.TextSecondary
+            )
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = DIColors.Primary,
+                modifier = Modifier.size(14.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryChip(
+    name: String,
+    color: Color,
+    onClick: () -> Unit
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = DIColors.Background.copy(alpha = 0.95f),
-        shadowElevation = 0.dp
+        modifier = Modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = color.copy(alpha = 0.15f)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Logo
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AsyncImage(
-                    model = "https://www.di.xyz/images/di-logo.png",
-                    contentDescription = "DI Store Logo",
-                    modifier = Modifier.height(40.dp),
-                    contentScale = ContentScale.Fit
-                )
-            }
-
-            // Wallet Button
-            OutlinedButton(
-                onClick = onWalletClick,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = DIColors.Primary
-                ),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    DIColors.Primary.copy(alpha = 0.5f)
-                )
-            ) {
-                Text(
-                    text = walletAddress,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
+        Text(
+            text = name,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Medium,
+            color = color
+        )
     }
 }
