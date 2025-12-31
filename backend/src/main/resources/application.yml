@@ -1,61 +1,53 @@
+spring:
+  application:
+    name: dappstore-backend
+  profiles:
+    active: dev
+
+  # Jackson 配置
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+# 服务器配置
 server:
   port: 8080
 
-spring:
-  application:
-    name: web3-dapp-store-server
+# Actuator 配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/web3store
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+# OpenAPI 配置
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+# 应用配置
+app:
+  jwt:
+    secret: ${JWT_SECRET:your-256-bit-secret-key-here-change-in-production}
+    expiration: 86400000  # 24 hours in milliseconds
+  
+  storage:
+    type: minio
+    bucket:
+      apk: dappstore-apks
+      icon: dappstore-icons
+      screenshot: dappstore-screenshots
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-
-  servlet:
-    multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
-
-# MinIO Configuration (APK Storage)
-minio:
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin}
-  bucket:
-    apk: dapp-apks
-    icons: dapp-icons
-    screenshots: dapp-screenshots
-
-# JWT Configuration
-jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-here-change-in-production}
-  expiration: 86400000  # 24 hours
-
-# Web3 Configuration
-web3:
-  ethereum:
-    rpc-url: ${ETH_RPC_URL:https://mainnet.infura.io/v3/your-project-id}
-  solana:
-    rpc-url: ${SOL_RPC_URL:https://api.mainnet-beta.solana.com}
-
-# App Store Configuration
-store:
-  review:
-    auto-scan: true
-    require-signature: true
-  featured:
-    refresh-interval: 3600  # 1 hour
+# 日志配置
+logging:
+  level:
+    com.di.dappstore: DEBUG
+    org.springframework.r2dbc: DEBUG

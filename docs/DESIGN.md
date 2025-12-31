@@ -513,15 +513,78 @@ CREATE INDEX idx_app_chains_chain ON app_chains(chain);
 
 ### 后端服务
 
-| 技术 | 用途 |
-|------|------|
-| Java 17 / Kotlin | 开发语言 |
-| Spring Boot 3 | Web 框架 |
-| PostgreSQL | 主数据库 |
-| Redis | 缓存 |
-| MinIO | APK 文件存储 |
-| Elasticsearch | 搜索引擎 |
-| Docker | 容器化部署 |
+| 技术 | 用途 | 版本 |
+|------|------|------|
+| **Kotlin** | 主开发语言 | 1.9+ |
+| Spring Boot 3 | Web 框架 | 3.2+ |
+| Spring WebFlux | 响应式 API (高并发场景) | - |
+| PostgreSQL | 主数据库 | 15+ |
+| Redis Cluster | 缓存 + 会话 | 7+ |
+| MinIO | APK/图片对象存储 | - |
+| Elasticsearch | 全文搜索 | 8+ |
+| Kafka | 消息队列 | 3+ |
+| Docker + K8s | 容器化部署 | - |
+
+#### Kotlin 技术栈详情
+
+```kotlin
+// build.gradle.kts 核心依赖
+dependencies {
+    // Spring Boot
+    implementation("org.springframework.boot:spring-boot-starter-webflux")  // 响应式
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc") // 响应式数据库
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // Kotlin
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")  // 协程支持
+    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
+
+    // 数据库
+    implementation("org.postgresql:r2dbc-postgresql")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+
+    // Web3
+    implementation("org.web3j:core:4.10.3")
+
+    // 工具
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+}
+```
+
+#### 项目结构
+
+```
+backend/
+├── src/main/kotlin/com/di/dappstore/
+│   ├── DAppStoreApplication.kt
+│   ├── config/                 # 配置类
+│   │   ├── SecurityConfig.kt
+│   │   ├── RedisConfig.kt
+│   │   └── Web3Config.kt
+│   ├── controller/             # API 控制器
+│   │   ├── AppController.kt
+│   │   ├── UserController.kt
+│   │   └── DeveloperController.kt
+│   ├── service/                # 业务服务
+│   │   ├── AppService.kt
+│   │   ├── ReviewService.kt
+│   │   ├── PushService.kt
+│   │   └── BlockchainService.kt
+│   ├── repository/             # 数据访问
+│   ├── model/                  # 数据模型
+│   │   ├── entity/
+│   │   ├── dto/
+│   │   └── vo/
+│   ├── security/               # 安全模块
+│   └── util/                   # 工具类
+├── src/main/resources/
+│   ├── application.yml
+│   └── application-prod.yml
+└── build.gradle.kts
+```
 
 ### 参考项目
 

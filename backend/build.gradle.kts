@@ -1,10 +1,13 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
-    java
     id("org.springframework.boot") version "3.2.1"
     id("io.spring.dependency-management") version "1.1.4"
+    kotlin("jvm") version "1.9.22"
+    kotlin("plugin.spring") version "1.9.22"
 }
 
-group = "com.web3store"
+group = "com.di"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -16,19 +19,25 @@ repositories {
 }
 
 dependencies {
-    // Spring Boot
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Spring Boot Starters
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-    // Database
-    implementation("org.postgresql:postgresql")
-    implementation("org.flywaydb:flyway-core")
+    // Kotlin
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
-    // Redis
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    // Database
+    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("org.postgresql:r2dbc-postgresql")
+    runtimeOnly("io.r2dbc:r2dbc-h2") // 开发环境使用 H2
+    runtimeOnly("com.h2database:h2")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.3")
@@ -38,19 +47,27 @@ dependencies {
     // Web3
     implementation("org.web3j:core:4.10.3")
 
-    // Storage (for APK files)
+    // MinIO
     implementation("io.minio:minio:8.5.7")
 
-    // API Documentation
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+    // Logging
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
 
-    // Lombok
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
+    // OpenAPI / Swagger
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0")
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+}
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs += "-Xjsr305=strict"
+        jvmTarget = "17"
+    }
 }
 
 tasks.withType<Test> {
