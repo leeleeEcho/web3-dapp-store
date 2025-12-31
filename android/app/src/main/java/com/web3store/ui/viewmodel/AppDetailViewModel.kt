@@ -33,7 +33,10 @@ class AppDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val appId: Long = savedStateHandle.get<Long>("appId") ?: 0L
+    // 从导航参数获取 appId (支持 String 和 Long 类型)
+    private val appId: Long = savedStateHandle.get<String>("appId")?.toLongOrNull()
+        ?: savedStateHandle.get<Long>("appId")
+        ?: 0L
 
     private val _uiState = MutableStateFlow(AppDetailUiState())
     val uiState: StateFlow<AppDetailUiState> = _uiState.asStateFlow()
@@ -42,6 +45,13 @@ class AppDetailViewModel @Inject constructor(
         if (appId > 0) {
             loadAppDetail(appId)
         }
+    }
+
+    /**
+     * 通过字符串 ID 加载应用详情
+     */
+    fun loadAppDetailByStringId(id: String) {
+        id.toLongOrNull()?.let { loadAppDetail(it) }
     }
 
     /**

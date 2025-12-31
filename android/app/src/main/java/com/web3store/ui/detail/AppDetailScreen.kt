@@ -15,33 +15,25 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.web3store.domain.model.AppDetail
 import com.web3store.ui.components.ChainBadge
 import com.web3store.ui.theme.DIColors
-
-data class AppDetail(
-    val id: String,
-    val name: String,
-    val tagline: String,
-    val description: String,
-    val iconUrl: String,
-    val rating: Float,
-    val downloads: String,
-    val chains: List<String>,
-    val screenshots: List<String>,
-    val features: List<String>,
-    val security: String,
-    val website: String
-)
+import com.web3store.ui.viewmodel.AppDetailUiState
+import com.web3store.ui.viewmodel.AppDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,28 +41,16 @@ fun AppDetailScreen(
     appId: String,
     onBackClick: () -> Unit,
     onInstallClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: AppDetailViewModel = hiltViewModel()
 ) {
-    // Sample data - in real app, fetch from ViewModel
-    val app = remember {
-        AppDetail(
-            id = appId,
-            name = "Aave",
-            tagline = "Decentralized Lending Protocol",
-            description = "Aave is an open-source and non-custodial liquidity protocol for earning interest on deposits and borrowing assets. The protocol features Flash Loans, the first uncollateralized loan in DeFi.",
-            iconUrl = "https://via.placeholder.com/96",
-            rating = 4.8f,
-            downloads = "2.5M",
-            chains = listOf("Ethereum", "Polygon", "Avalanche", "Optimism"),
-            screenshots = listOf(
-                "https://via.placeholder.com/300x200",
-                "https://via.placeholder.com/300x200",
-                "https://via.placeholder.com/300x200"
-            ),
-            features = listOf("Lending & Borrowing", "Flash Loans", "Rate Switching", "Collateral Management"),
-            security = "Audited by Trail of Bits, OpenZeppelin, and Consensys Diligence",
-            website = "https://aave.com"
-        )
+    val uiState by viewModel.uiState.collectAsState()
+
+    // 如果 ViewModel 没有自动加载（appId 从导航参数获取失败），手动触发加载
+    LaunchedEffect(appId) {
+        if (uiState.appDetail == null && !uiState.isLoading && uiState.error == null) {
+            viewModel.loadAppDetailByStringId(appId)
+        }
     }
 
     Scaffold(
@@ -83,49 +63,99 @@ fun AppDetailScreen(
         },
         containerColor = DIColors.Background
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            // App Header
-            item {
-                AppHeader(
-                    app = app,
-                    onInstallClick = onInstallClick
-                )
+        when {
+            uiState.isLoading -> {
+                // 加载中
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = DIColors.Primary)
+                }
             }
-
-            // Screenshots
-            item {
-                ScreenshotsSection(screenshots = app.screenshots)
+            uiState.error != null -> {
+                // 错误状态
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = uiState.error ?: "加载失败",
+                            color = Color(0xFFFF5252),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Button(
+                            onClick = { viewModel.loadAppDetailByStringId(appId) },
+                            colors = ButtonDefaults.buttonColors(containerColor = DIColors.Primary)
+                        ) {
+                            Text("重试")
+                        }
+                    }
+                }
             }
+            uiState.appDetail != null -> {
+                val app = uiState.appDetail!!
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    // App Header
+                    item {
+                        AppHeaderSection(
+                            app = app,
+                            isDownloading = uiState.isDownloading,
+                            downloadProgress = uiState.downloadProgress,
+                            onInstallClick = { viewModel.startDownload() }
+                        )
+                    }
 
-            // Description
-            item {
-                DescriptionSection(description = app.description)
-            }
+                    // Screenshots
+                    if (app.screenshots.isNotEmpty()) {
+                        item {
+                            ScreenshotsSection(screenshots = app.screenshots.map { it.imageUrl })
+                        }
+                    }
 
-            // Features
-            item {
-                FeaturesSection(features = app.features)
-            }
+                    // Description
+                    app.description?.let { description ->
+                        item {
+                            DescriptionSection(description = description)
+                        }
+                    }
 
-            // Supported Chains
-            item {
-                ChainsSection(chains = app.chains)
-            }
+                    // App Info
+                    item {
+                        AppInfoSection(app = app)
+                    }
 
-            // Security
-            item {
-                SecuritySection(security = app.security)
-            }
+                    // Supported Chains
+                    if (app.chains.isNotEmpty()) {
+                        item {
+                            ChainsSection(chains = app.chains)
+                        }
+                    }
 
-            // Bottom spacing
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
+                    // Developer Info
+                    item {
+                        DeveloperSection(app = app)
+                    }
+
+                    // Bottom spacing
+                    item {
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+                }
             }
         }
     }
@@ -173,8 +203,10 @@ private fun DetailTopBar(
 }
 
 @Composable
-private fun AppHeader(
+private fun AppHeaderSection(
     app: AppDetail,
+    isDownloading: Boolean,
+    downloadProgress: Float,
     onInstallClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -186,14 +218,29 @@ private fun AppHeader(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // App Icon
-            AsyncImage(
-                model = app.iconUrl,
-                contentDescription = app.name,
+            Box(
                 modifier = Modifier
                     .size(96.dp)
-                    .clip(RoundedCornerShape(24.dp)),
-                contentScale = ContentScale.Crop
-            )
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(DIColors.Card),
+                contentAlignment = Alignment.Center
+            ) {
+                if (app.iconUrl != null) {
+                    AsyncImage(
+                        model = app.iconUrl,
+                        contentDescription = app.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = app.name.take(2),
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = DIColors.Primary
+                    )
+                }
+            }
 
             // App Info
             Column(modifier = Modifier.weight(1f)) {
@@ -205,7 +252,7 @@ private fun AppHeader(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = app.tagline,
+                    text = app.shortDescription ?: "",
                     style = MaterialTheme.typography.bodyLarge,
                     color = DIColors.TextSecondary
                 )
@@ -226,7 +273,7 @@ private fun AppHeader(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = app.rating.toString(),
+                            text = String.format("%.1f", app.ratingAverage),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = DIColors.Primary
@@ -245,7 +292,7 @@ private fun AppHeader(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = app.downloads,
+                            text = app.formattedDownloads,
                             style = MaterialTheme.typography.bodyMedium,
                             color = DIColors.TextSecondary
                         )
@@ -256,23 +303,45 @@ private fun AppHeader(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Install Button
-        Button(
-            onClick = onInstallClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = DIColors.Primary,
-                contentColor = DIColors.Background
-            )
-        ) {
-            Text(
-                text = "Install App",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+        // Install Button with progress
+        if (isDownloading) {
+            Column {
+                @Suppress("DEPRECATION")
+                LinearProgressIndicator(
+                    progress = downloadProgress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = DIColors.Primary,
+                    trackColor = DIColors.Card
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "下载中 ${(downloadProgress * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DIColors.TextSecondary,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        } else {
+            Button(
+                onClick = onInstallClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DIColors.Primary,
+                    contentColor = DIColors.Background
+                )
+            ) {
+                Text(
+                    text = "安装应用",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -408,40 +477,132 @@ private fun ChainsSection(
 }
 
 @Composable
-private fun SecuritySection(
-    security: String,
+private fun AppInfoSection(
+    app: AppDetail,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DIColors.Card
+    Column(modifier = modifier.padding(horizontal = 16.dp)) {
+        Text(
+            text = "应用信息",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = DIColors.TextPrimary
         )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = DIColors.Card)
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Security,
-                contentDescription = null,
-                tint = DIColors.Primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Column {
-                Text(
-                    text = "Security",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = DIColors.TextPrimary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = security,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = DIColors.TextSecondary
-                )
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                InfoRow(label = "版本", value = app.versionName)
+                InfoRow(label = "大小", value = app.formattedSize)
+                InfoRow(label = "包名", value = app.packageName)
+                if (app.isWeb3) {
+                    InfoRow(label = "类型", value = "Web3 DApp")
+                }
+                app.websiteUrl?.let {
+                    InfoRow(label = "网站", value = it)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = DIColors.TextSecondary
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = DIColors.TextPrimary
+        )
+    }
+}
+
+@Composable
+private fun DeveloperSection(
+    app: AppDetail,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.padding(horizontal = 16.dp)) {
+        Text(
+            text = "开发者",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = DIColors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = DIColors.Card)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Developer Icon
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DIColors.Primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = (app.developer.companyName ?: "D").take(1),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = DIColors.Primary
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = app.developer.companyName ?: "Unknown Developer",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DIColors.TextPrimary
+                        )
+                        if (app.developer.isVerified) {
+                            Icon(
+                                imageVector = Icons.Outlined.Verified,
+                                contentDescription = "已验证",
+                                tint = DIColors.Primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = "${app.developer.totalApps} 款应用",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DIColors.TextSecondary
+                    )
+                }
             }
         }
     }
