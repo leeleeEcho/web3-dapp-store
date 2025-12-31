@@ -1,4 +1,7 @@
 # 开发环境配置
+server:
+  port: 9000
+
 spring:
   r2dbc:
     url: r2dbc:h2:mem:///dappstore;DB_CLOSE_DELAY=-1

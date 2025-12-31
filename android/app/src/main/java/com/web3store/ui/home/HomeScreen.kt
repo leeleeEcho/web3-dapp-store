@@ -29,7 +29,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.web3store.domain.model.AppListItem
+import com.web3store.domain.model.Category
 import com.web3store.ui.theme.DIColors
+import com.web3store.ui.viewmodel.HomeUiState
+import com.web3store.ui.viewmodel.HomeViewModel
 
 data class FeaturedApp(
     val id: String,
@@ -49,6 +54,21 @@ data class AppItem(
     val category: String
 )
 
+/**
+ * 将 AppListItem 转换为 UI 使用的 AppItem
+ */
+private fun AppListItem.toAppItem(): AppItem {
+    return AppItem(
+        id = id.toString(),
+        name = name,
+        developer = developerName ?: "Unknown",
+        iconUrl = iconUrl ?: "",
+        rating = ratingAverage.toFloat(),
+        size = formattedSize,
+        category = categoryName ?: ""
+    )
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -56,34 +76,63 @@ fun HomeScreen(
     onSearchClick: () -> Unit,
     onWalletClick: () -> Unit,
     onNotificationClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val featuredApps = remember {
-        listOf(
-            FeaturedApp("1", "Uniswap", "去中心化交易所", "", listOf(Color(0xFFFF007A), Color(0xFF9B00FF))),
-            FeaturedApp("2", "OpenSea", "全球最大NFT市场", "", listOf(Color(0xFF2081E2), Color(0xFF1868B7))),
-            FeaturedApp("3", "Axie Infinity", "边玩边赚GameFi", "", listOf(Color(0xFF00B4D8), Color(0xFF0077B6)))
-        )
+    val uiState by viewModel.uiState.collectAsState()
+
+    // 从 API 数据转换为 UI 模型
+    val featuredApps = remember(uiState.featuredApps) {
+        if (uiState.featuredApps.isNotEmpty()) {
+            uiState.featuredApps.take(5).mapIndexed { index, app ->
+                val gradients = listOf(
+                    listOf(Color(0xFFFF007A), Color(0xFF9B00FF)),
+                    listOf(Color(0xFF2081E2), Color(0xFF1868B7)),
+                    listOf(Color(0xFF00B4D8), Color(0xFF0077B6)),
+                    listOf(Color(0xFF14F195), Color(0xFF9945FF)),
+                    listOf(Color(0xFFFF6B9D), Color(0xFFFF8C42))
+                )
+                FeaturedApp(
+                    id = app.id.toString(),
+                    name = app.name,
+                    tagline = app.shortDescription ?: "",
+                    imageUrl = app.iconUrl ?: "",
+                    gradient = gradients[index % gradients.size]
+                )
+            }
+        } else {
+            listOf(
+                FeaturedApp("1", "Uniswap", "去中心化交易所", "", listOf(Color(0xFFFF007A), Color(0xFF9B00FF))),
+                FeaturedApp("2", "OpenSea", "全球最大NFT市场", "", listOf(Color(0xFF2081E2), Color(0xFF1868B7))),
+                FeaturedApp("3", "Axie Infinity", "边玩边赚GameFi", "", listOf(Color(0xFF00B4D8), Color(0xFF0077B6)))
+            )
+        }
     }
 
-    val recommendedApps = remember {
-        listOf(
-            AppItem("1", "MetaMask", "ConsenSys", "", 4.5f, "32 MB", "工具"),
-            AppItem("2", "Uniswap", "Uniswap Labs", "", 4.8f, "28 MB", "金融"),
-            AppItem("3", "OpenSea", "OpenSea", "", 4.3f, "45 MB", "NFT"),
-            AppItem("4", "Aave", "Aave Labs", "", 4.6f, "22 MB", "金融"),
-            AppItem("5", "Blur", "Blur Inc", "", 4.4f, "38 MB", "NFT")
-        )
+    val recommendedApps = remember(uiState.featuredApps) {
+        uiState.featuredApps.map { it.toAppItem() }.ifEmpty {
+            listOf(
+                AppItem("1", "MetaMask", "ConsenSys", "", 4.5f, "32 MB", "工具"),
+                AppItem("2", "Uniswap", "Uniswap Labs", "", 4.8f, "28 MB", "金融")
+            )
+        }
     }
 
-    val topCharts = remember {
-        listOf(
-            AppItem("6", "PancakeSwap", "PancakeSwap", "", 4.7f, "25 MB", "金融"),
-            AppItem("7", "Raydium", "Raydium", "", 4.5f, "30 MB", "金融"),
-            AppItem("8", "Magic Eden", "Magic Eden", "", 4.6f, "42 MB", "NFT"),
-            AppItem("9", "StepN", "Find Satoshi Lab", "", 4.2f, "85 MB", "健康"),
-            AppItem("10", "Axie Infinity", "Sky Mavis", "", 4.4f, "120 MB", "游戏")
-        )
+    val topCharts = remember(uiState.topDownloads) {
+        uiState.topDownloads.map { it.toAppItem() }.ifEmpty {
+            listOf(
+                AppItem("6", "PancakeSwap", "PancakeSwap", "", 4.7f, "25 MB", "金融"),
+                AppItem("7", "Raydium", "Raydium", "", 4.5f, "30 MB", "金融")
+            )
+        }
+    }
+
+    val latestApps = remember(uiState.latestApps) {
+        uiState.latestApps.map { it.toAppItem() }
+    }
+
+    val categories = remember(uiState.categories) {
+        uiState.categories
     }
 
     Scaffold(
@@ -202,7 +251,8 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(recommendedApps.reversed()) { app ->
+                    val apps = latestApps.ifEmpty { recommendedApps.reversed() }
+                    items(apps) { app ->
                         AppCard(
                             app = app,
                             onClick = { onAppClick(app.id) }
@@ -222,19 +272,76 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val categories = listOf(
-                        "DeFi" to DIColors.Primary,
-                        "NFT" to Color(0xFF9945FF),
-                        "游戏" to Color(0xFF14F195),
-                        "社交" to Color(0xFFFF6B9D),
-                        "工具" to Color(0xFF00D4FF)
+                    val categoryColors = listOf(
+                        DIColors.Primary,
+                        Color(0xFF9945FF),
+                        Color(0xFF14F195),
+                        Color(0xFFFF6B9D),
+                        Color(0xFF00D4FF),
+                        Color(0xFFFF8C42),
+                        Color(0xFF00B4D8),
+                        Color(0xFFFF007A)
                     )
-                    items(categories) { (name, color) ->
+                    val displayCategories = if (categories.isNotEmpty()) {
+                        categories.mapIndexed { index, cat ->
+                            cat.displayName to categoryColors[index % categoryColors.size]
+                        }
+                    } else {
+                        listOf(
+                            "DeFi" to DIColors.Primary,
+                            "NFT" to Color(0xFF9945FF),
+                            "游戏" to Color(0xFF14F195),
+                            "社交" to Color(0xFFFF6B9D),
+                            "工具" to Color(0xFF00D4FF)
+                        )
+                    }
+                    items(displayCategories) { (name, color) ->
                         CategoryChip(
                             name = name,
                             color = color,
                             onClick = { }
                         )
+                    }
+                }
+            }
+
+            // 加载中状态
+            if (uiState.isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = DIColors.Primary)
+                    }
+                }
+            }
+
+            // 错误提示
+            uiState.error?.let { error ->
+                item {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        color = Color(0xFFFF5252).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = error,
+                                color = Color(0xFFFF5252),
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = { viewModel.refresh() }) {
+                                Text("重试", color = DIColors.Primary)
+                            }
+                        }
                     }
                 }
             }
