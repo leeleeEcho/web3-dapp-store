@@ -208,6 +208,177 @@ mkdir -p backend/src/test/kotlin/com/di/dappstore
 
 ---
 
+---
+
+## 2024-12-31: Android 客户端网络层实现
+
+### 目标
+连接 Android 客户端到后端 API，实现真实数据展示
+
+### 技术栈
+
+| 组件 | 选择 | 理由 |
+|------|------|------|
+| 网络库 | Retrofit 2 + OkHttp | 成熟稳定、支持协程 |
+| JSON 解析 | Moshi | Kotlin 友好、高性能 |
+| 依赖注入 | Hilt | 官方推荐、编译时检查 |
+| 状态管理 | StateFlow | 响应式、生命周期感知 |
+| 架构模式 | MVVM | 关注点分离、可测试性 |
+
+### 实现内容
+
+#### 1. 网络层架构
+
+```
+android/app/src/main/java/com/web3store/
+├── data/
+│   ├── remote/
+│   │   ├── api/
+│   │   │   └── DAppStoreApi.kt        # Retrofit API 接口
+│   │   ├── dto/
+│   │   │   ├── ApiResponse.kt         # 统一响应包装
+│   │   │   ├── AppDto.kt              # 应用列表 DTO
+│   │   │   └── AppDetailDto.kt        # 应用详情 DTO
+│   │   └── mapper/
+│   │       └── AppMapper.kt           # DTO -> Domain 映射
+│   └── repository/
+│       └── AppRepository.kt           # 数据仓库实现
+├── di/
+│   └── NetworkModule.kt               # Hilt 网络模块
+├── domain/
+│   └── model/
+│       ├── AppInfo.kt                 # 应用列表模型
+│       └── AppDetail.kt               # 应用详情模型
+└── ui/
+    └── viewmodel/
+        ├── HomeViewModel.kt           # 首页 ViewModel
+        └── AppDetailViewModel.kt      # 详情页 ViewModel
+```
+
+#### 2. API 端点映射
+
+| Android 方法 | 后端 API | 用途 |
+|-------------|----------|------|
+| `getFeaturedApps()` | GET /api/v1/apps/featured | 精选应用 |
+| `getTopDownloads()` | GET /api/v1/apps/top-downloads | 热门下载 |
+| `getTopRated()` | GET /api/v1/apps/top-rated | 高分应用 |
+| `getLatestApps()` | GET /api/v1/apps/latest | 最新应用 |
+| `getAppDetail(id)` | GET /api/v1/apps/{id} | 应用详情 |
+| `getCategories()` | GET /api/v1/categories | 分类列表 |
+
+#### 3. 关键代码实现
+
+**NetworkModule.kt (Hilt 依赖注入)**
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+object NetworkModule {
+    private const val BASE_URL = "http://10.0.2.2:9000/"  // 模拟器访问本地
+
+    @Provides @Singleton
+    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(HttpLoggingInterceptor())
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .build()
+}
+```
+
+**HomeViewModel.kt (状态管理)**
+```kotlin
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val repository: AppRepository
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(HomeUiState())
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    init { loadHomeData() }
+}
+```
+
+### 测试验证
+
+#### API 连接测试 (2024-12-31 15:43)
+
+```
+首页 API:
+✅ GET /api/v1/apps/featured     → 200 OK (16ms)
+✅ GET /api/v1/apps/top-downloads → 200 OK (11ms)
+
+详情页 API:
+✅ GET /api/v1/apps/1            → 200 OK (7ms)
+```
+
+#### 响应数据示例
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Uniswap",
+    "packageName": "com.uniswap.mobile",
+    "description": "去中心化交易所",
+    "developer": {"companyName": "DI Labs", "isVerified": true},
+    "category": {"name": "defi", "displayName": "DeFi"}
+  }
+}
+```
+
+### 问题与解决
+
+1. **端口 8080 被占用**
+   - 问题: 本地 8080 端口被其他进程占用
+   - 解决: 将后端端口改为 9000，同步修改 Android NetworkModule
+
+2. **导航参数类型不匹配**
+   - 问题: Navigation 传递 String 类型 appId，但 ViewModel 期望 Long
+   - 解决: 在 ViewModel 中同时支持 String 和 Long 类型
+
+3. **LinearProgressIndicator API 变更**
+   - 问题: Material 3 新版本使用 lambda 参数 `progress = { value }`
+   - 解决: 使用 `@Suppress("DEPRECATION")` 保持兼容
+
+---
+
+## 开发状态总结
+
+### 已完成功能
+
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| **后端** | Spring Boot 项目框架 | ✅ 完成 |
+| | R2DBC 数据库访问 | ✅ 完成 |
+| | REST API (App/Category/Review/Auth) | ✅ 完成 |
+| | 健康检查接口 | ✅ 完成 |
+| | 初始数据 (Uniswap/OpenSea/Aave) | ✅ 完成 |
+| **Android** | Jetpack Compose UI | ✅ 完成 |
+| | Hilt 依赖注入 | ✅ 完成 |
+| | MVVM 架构 | ✅ 完成 |
+| | 首页 (精选/热门/最新) | ✅ 完成 |
+| | 详情页 (API 连接) | ✅ 完成 |
+| | 网络层 (Retrofit/OkHttp) | ✅ 完成 |
+| | 主题系统 (黑金风格) | ✅ 完成 |
+
+### 待开发功能
+
+| 模块 | 功能 | 优先级 |
+|------|------|--------|
+| **后端** | JWT Token 认证 | 高 |
+| | 钱包签名验证 | 高 |
+| | MinIO 文件存储 | 中 |
+| | Redis 缓存 | 中 |
+| | Elasticsearch 搜索 | 中 |
+| | Docker 部署 | 低 |
+| **Android** | 钱包集成 (Trust Wallet Core) | 高 |
+| | WalletConnect V2 | 高 |
+| | APK 下载安装 | 高 |
+| | 搜索功能 | 中 |
+| | 分类浏览 | 中 |
+| | 评分评论 | 低 |
+| | 用户登录 | 低 |
+
+---
+
 ## 后续计划
 
 - [ ] 实现钱包签名验证逻辑

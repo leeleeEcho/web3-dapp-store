@@ -73,15 +73,29 @@ web3-dapp-store/
 - MinIO (文件存储)
 - Docker
 
-## 开发计划
+## 开发进度
+
+### Phase 1: 基础框架 (MVP) - 进行中 🚧
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| 后端 API 服务 | ✅ 完成 | Spring Boot + R2DBC + H2 |
+| Android UI 框架 | ✅ 完成 | Jetpack Compose + Material 3 |
+| 首页展示 | ✅ 完成 | 精选/热门/最新应用 |
+| 详情页 | ✅ 完成 | 应用详情 + 开发者信息 |
+| 网络层 | ✅ 完成 | Retrofit + OkHttp + Hilt |
+| 钱包集成 | ⏳ 待开发 | Trust Wallet Core |
+| APK 下载安装 | ⏳ 待开发 | 应用分发核心功能 |
+| 用户认证 | ⏳ 待开发 | 钱包签名登录 |
+
+### Phase 2-5: 计划中
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| Phase 1 | 基础框架 (MVP) | 计划中 |
-| Phase 2 | 钱包增强 | 计划中 |
-| Phase 3 | dApp 浏览器 | 计划中 |
-| Phase 4 | 生态完善 | 计划中 |
-| Phase 5 | 系统集成 | 计划中 |
+| Phase 2 | 钱包增强 (WalletConnect/MWA) | 计划中 |
+| Phase 3 | 搜索/分类/评论 | 计划中 |
+| Phase 4 | 开发者门户 | 计划中 |
+| Phase 5 | 系统集成 (ROM 预装) | 计划中 |
 
 ## 参考项目
 

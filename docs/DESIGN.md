@@ -1905,29 +1905,39 @@ class PrivacyManager {
 
 ## 开发计划
 
-### Phase 1: 基础框架 (MVP)
+### Phase 1: 基础框架 (MVP) - 进行中 🚧
 
 **目标**: 完成最小可用版本
 
+**当前进度**: 70% 完成
+
 #### 1.1 Android 客户端
-- [ ] 项目初始化与架构搭建
-- [ ] 应用市场首页 UI
-- [ ] 应用列表与详情页
+- [x] 项目初始化与架构搭建 (Kotlin + Jetpack Compose + Hilt)
+- [x] 应用市场首页 UI (精选/热门/高分/最新)
+- [x] 应用列表与详情页 (API 连接完成)
+- [x] 网络层实现 (Retrofit + OkHttp + Moshi)
+- [x] MVVM 架构与状态管理 (ViewModel + StateFlow)
 - [ ] APK 下载与安装管理
 - [ ] 基础钱包功能 (创建/导入)
 - [ ] 单链支持 (Ethereum)
 
 #### 1.2 后端服务
-- [ ] Spring Boot 项目初始化
-- [ ] 数据库设计与迁移
-- [ ] 应用 CRUD API
-- [ ] 文件上传与存储
-- [ ] 基础认证系统
+- [x] Spring Boot 项目初始化 (Kotlin + Spring Boot 3.2)
+- [x] 数据库设计与迁移 (R2DBC + H2)
+- [x] 应用 CRUD API (完整 REST API)
+- [x] 分类/评论/开发者 API
+- [x] 健康检查接口
+- [ ] 文件上传与存储 (MinIO)
+- [ ] 基础认证系统 (JWT + 钱包签名)
 
-#### 1.3 交付物
-- 可安装的 APK
-- 可运行的后端服务
-- API 文档
+#### 1.3 已完成交付物
+- ✅ 可安装的 APK (调试版)
+- ✅ 可运行的后端服务 (端口 9000)
+- ✅ API 连接验证通过
+
+#### 1.4 待完成交付物
+- 生产环境部署
+- API 文档 (Swagger)
 
 ---
 
