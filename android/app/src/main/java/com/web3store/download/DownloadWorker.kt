@@ -3,7 +3,9 @@ package com.web3store.download
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
@@ -15,6 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
+
+private const val TAG = "DownloadWorker"
 
 /**
  * WorkManager worker for background APK downloads
@@ -91,6 +95,7 @@ class DownloadWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        Log.d(TAG, "doWork started")
         val packageName = inputData.getString(KEY_PACKAGE_NAME)
             ?: return@withContext Result.failure(workDataOf(KEY_ERROR to "Missing package name"))
 
@@ -101,6 +106,7 @@ class DownloadWorker @AssistedInject constructor(
             ?: return@withContext Result.failure(workDataOf(KEY_ERROR to "Missing APK URL"))
 
         val apkHash = inputData.getString(KEY_APK_HASH) ?: ""
+        Log.d(TAG, "Downloading: packageName=$packageName, url=$apkUrl")
 
         // Check if APK already exists
         val existingApk = ApkCache.getExistingApk(context, packageName, versionName)
@@ -181,7 +187,13 @@ class DownloadWorker @AssistedInject constructor(
             .setSilent(true)
             .build()
 
-        return ForegroundInfo(NOTIFICATION_ID, notification)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ForegroundInfo(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(NOTIFICATION_ID, notification)
+        }
     }
 
     private fun updateNotification(appName: String, progress: Int) {

@@ -1,6 +1,7 @@
 package com.web3store.ui.viewmodel
 
 import android.app.Activity
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+
+private const val TAG = "AppDetailViewModel"
 
 /**
  * Button state for download/install actions
@@ -103,24 +106,30 @@ class AppDetailViewModel @Inject constructor(
      */
     private fun checkAppState(appDetail: AppDetail) {
         val installedVersion = apkInstaller.getInstalledVersion(appDetail.packageName)
+        Log.i(TAG, "checkAppState: packageName=${appDetail.packageName}, installedVersion=$installedVersion, dbVersion=${appDetail.versionName}")
 
         val buttonState = when {
             installedVersion != null && installedVersion == appDetail.versionName -> {
+                Log.i(TAG, "checkAppState: versions match, setting Open state")
                 ActionButtonState.Open
             }
             installedVersion != null && installedVersion != appDetail.versionName -> {
+                Log.i(TAG, "checkAppState: versions differ, setting Update state")
                 ActionButtonState.Update
             }
             downloadRepository.hasDownloadedApk(appDetail.packageName, appDetail.versionName) -> {
                 val file = downloadRepository.getDownloadedApk(appDetail.packageName, appDetail.versionName)
                 _uiState.update { it.copy(downloadedApkFile = file) }
+                Log.i(TAG, "checkAppState: APK downloaded, setting Install state")
                 ActionButtonState.Install
             }
             else -> {
+                Log.i(TAG, "checkAppState: nothing found, setting Download state")
                 ActionButtonState.Download
             }
         }
 
+        Log.i(TAG, "checkAppState: final buttonState=$buttonState")
         _uiState.update { it.copy(buttonState = buttonState) }
     }
 
@@ -128,6 +137,7 @@ class AppDetailViewModel @Inject constructor(
      * Handle primary button click
      */
     fun onPrimaryButtonClick() {
+        Log.i(TAG, "onPrimaryButtonClick: buttonState=${_uiState.value.buttonState}")
         when (_uiState.value.buttonState) {
             is ActionButtonState.Download, is ActionButtonState.Update -> startDownload()
             is ActionButtonState.Install -> installApk()
@@ -141,6 +151,7 @@ class AppDetailViewModel @Inject constructor(
      */
     fun startDownload() {
         val appDetail = _uiState.value.appDetail ?: return
+        Log.d(TAG, "startDownload: appId=${appDetail.id}, apkUrl=${appDetail.apkUrl}")
 
         viewModelScope.launch {
             // Check if already downloaded
@@ -168,9 +179,11 @@ class AppDetailViewModel @Inject constructor(
             }
 
             val workId = downloadRepository.startDownload(appDetail)
+            Log.d(TAG, "Download work enqueued: workId=$workId")
 
             // Observe download progress
             downloadRepository.observeDownloadState(appDetail.id, workId).collect { state ->
+                Log.d(TAG, "Download state changed: $state")
                 _uiState.update { uiState ->
                     val buttonState = when (state) {
                         is DownloadState.Downloading -> ActionButtonState.Downloading(state.progress)
@@ -210,11 +223,36 @@ class AppDetailViewModel @Inject constructor(
      * Install the downloaded APK
      */
     fun installApk() {
-        val appDetail = _uiState.value.appDetail ?: return
-        val apkFile = _uiState.value.downloadedApkFile ?: return
+        Log.d(TAG, "installApk called")
+        val appDetail = _uiState.value.appDetail
+        if (appDetail == null) {
+            Log.e(TAG, "installApk: appDetail is null")
+            return
+        }
+
+        val apkFile = _uiState.value.downloadedApkFile
+        if (apkFile == null) {
+            Log.e(TAG, "installApk: downloadedApkFile is null")
+            // Try to get the downloaded file from cache
+            val cachedFile = downloadRepository.getDownloadedApk(appDetail.packageName, appDetail.versionName)
+            if (cachedFile != null && cachedFile.exists()) {
+                Log.d(TAG, "installApk: Found cached file: ${cachedFile.absolutePath}")
+                _uiState.update { it.copy(downloadedApkFile = cachedFile) }
+            } else {
+                Log.e(TAG, "installApk: No cached file found either, need to download first")
+                return
+            }
+        } else {
+            Log.d(TAG, "installApk: apkFile=${apkFile.absolutePath}, exists=${apkFile.exists()}")
+        }
+
+        val fileToInstall = _uiState.value.downloadedApkFile ?: return
+        Log.d(TAG, "installApk: Installing file: ${fileToInstall.absolutePath}")
 
         // Check install permission
-        if (!apkInstaller.hasInstallPermission()) {
+        val hasPermission = apkInstaller.hasInstallPermission()
+        Log.d(TAG, "installApk: hasInstallPermission=$hasPermission")
+        if (!hasPermission) {
             _uiState.update { it.copy(needsInstallPermission = true) }
             return
         }
@@ -227,8 +265,10 @@ class AppDetailViewModel @Inject constructor(
                 )
             }
 
-            apkInstaller.install(apkFile, appDetail.packageName).fold(
+            Log.d(TAG, "installApk: Starting install...")
+            apkInstaller.install(fileToInstall, appDetail.packageName).fold(
                 onSuccess = {
+                    Log.d(TAG, "installApk: Install success")
                     _uiState.update {
                         it.copy(
                             installState = InstallState.Success,
@@ -237,6 +277,7 @@ class AppDetailViewModel @Inject constructor(
                     }
                 },
                 onFailure = { error ->
+                    Log.e(TAG, "installApk: Install failed: ${error.message}", error)
                     _uiState.update {
                         it.copy(
                             installState = InstallState.Failed(
@@ -296,8 +337,15 @@ class AppDetailViewModel @Inject constructor(
      * Open the installed app
      */
     fun openApp() {
-        val appDetail = _uiState.value.appDetail ?: return
-        apkInstaller.launchApp(appDetail.packageName)
+        Log.i(TAG, "openApp called, buttonState=${_uiState.value.buttonState}")
+        val appDetail = _uiState.value.appDetail
+        if (appDetail == null) {
+            Log.e(TAG, "openApp: appDetail is null")
+            return
+        }
+        Log.i(TAG, "openApp: launching ${appDetail.packageName}")
+        val result = apkInstaller.launchApp(appDetail.packageName)
+        Log.i(TAG, "openApp: result=$result")
     }
 
     /**

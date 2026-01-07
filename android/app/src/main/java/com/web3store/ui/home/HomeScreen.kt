@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.web3store.domain.model.AppListItem
 import com.web3store.domain.model.Category
 import com.web3store.ui.theme.DIColors
@@ -518,12 +519,21 @@ private fun AppCard(
                 .background(DIColors.Card),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = app.name.take(2),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = DIColors.Primary
-            )
+            if (app.iconUrl.isNotBlank()) {
+                AsyncImage(
+                    model = app.iconUrl,
+                    contentDescription = app.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    text = app.name.take(2),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DIColors.Primary
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -588,12 +598,21 @@ private fun RankedAppRow(
                 .background(DIColors.Card),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = app.name.take(2),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = DIColors.Primary
-            )
+            if (app.iconUrl.isNotBlank()) {
+                AsyncImage(
+                    model = app.iconUrl,
+                    contentDescription = app.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    text = app.name.take(2),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = DIColors.Primary
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(12.dp))

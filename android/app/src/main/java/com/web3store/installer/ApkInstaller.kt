@@ -240,12 +240,21 @@ class ApkInstaller @Inject constructor(
      * Launch an installed app
      */
     fun launchApp(packageName: String): Boolean {
+        Log.i(TAG, "launchApp: packageName=$packageName")
         val intent = context.packageManager.getLaunchIntentForPackage(packageName)
+        Log.i(TAG, "launchApp: intent=$intent")
         return if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            true
+            try {
+                context.startActivity(intent)
+                Log.i(TAG, "launchApp: success")
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "launchApp: failed", e)
+                false
+            }
         } else {
+            Log.e(TAG, "launchApp: no launch intent found for $packageName")
             false
         }
     }

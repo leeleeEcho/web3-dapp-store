@@ -1,5 +1,7 @@
 package com.web3store.ui.detail
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.*
+import android.app.Activity
 import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -25,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,12 +50,54 @@ fun AppDetailScreen(
     viewModel: AppDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     // 如果 ViewModel 没有自动加载（appId 从导航参数获取失败），手动触发加载
     LaunchedEffect(appId) {
         if (uiState.appDetail == null && !uiState.isLoading && uiState.error == null) {
             viewModel.loadAppDetailByStringId(appId)
         }
+    }
+
+    // 安装权限对话框
+    if (uiState.needsInstallPermission) {
+        AlertDialog(
+            onDismissRequest = { /* Do nothing, require user action */ },
+            title = {
+                Text(
+                    text = "需要安装权限",
+                    color = DIColors.TextPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "安装应用需要允许「安装未知来源应用」权限。点击「去设置」打开权限设置。",
+                    color = DIColors.TextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        (context as? Activity)?.let { activity ->
+                            viewModel.requestInstallPermission(activity)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DIColors.Primary)
+                ) {
+                    Text("去设置")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.onPermissionResult()
+                    }
+                ) {
+                    Text("取消", color = DIColors.TextSecondary)
+                }
+            },
+            containerColor = DIColors.Card
+        )
     }
 
     Scaffold(
@@ -116,7 +162,11 @@ fun AppDetailScreen(
                         AppHeaderSection(
                             app = app,
                             buttonState = uiState.buttonState,
-                            onButtonClick = { viewModel.onPrimaryButtonClick() },
+                            onButtonClick = {
+                                Log.i("AppDetailScreen", "onButtonClick called from LazyColumn item, buttonState=${uiState.buttonState}")
+                                Toast.makeText(context, "Button clicked: ${uiState.buttonState}", Toast.LENGTH_SHORT).show()
+                                viewModel.onPrimaryButtonClick()
+                            },
                             onCancelClick = { viewModel.cancelDownload() }
                         )
                     }
@@ -368,8 +418,13 @@ private fun AppHeaderSection(
                     else -> "下载" to DIColors.Primary
                 }
 
+                Log.i("AppDetailScreen", "Rendering button: text=$buttonText, state=$buttonState")
+
                 Button(
-                    onClick = onButtonClick,
+                    onClick = {
+                        Log.i("AppDetailScreen", "Button clicked! buttonState=$buttonState")
+                        onButtonClick()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
