@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- External cache directory for APK downloads -->
+    <external-cache-path name="apk" path="apk/" />
+    <!-- Internal cache directory as fallback -->
+    <cache-path name="apk_internal" path="apk/" />
+</paths>

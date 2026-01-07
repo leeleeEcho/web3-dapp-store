@@ -11,7 +11,10 @@ import com.di.dappstore.repository.AppRepository
 import com.di.dappstore.repository.CategoryRepository
 import com.di.dappstore.repository.DeveloperRepository
 import com.di.dappstore.repository.ScreenshotRepository
+import com.di.dappstore.service.search.AppSearchService
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -24,8 +27,11 @@ class AppService(
     private val appRepository: AppRepository,
     private val developerRepository: DeveloperRepository,
     private val categoryRepository: CategoryRepository,
-    private val screenshotRepository: ScreenshotRepository
+    private val screenshotRepository: ScreenshotRepository,
+    @Lazy private val appSearchService: AppSearchService
 ) {
+    @Value("\${app.elasticsearch.enabled:true}")
+    private var elasticsearchEnabled: Boolean = true
 
     /**
      * 获取应用列表 (分页)
@@ -71,9 +77,27 @@ class AppService(
     }
 
     /**
-     * 搜索应用
+     * 搜索应用 (使用 Elasticsearch 全文搜索，回退到数据库 LIKE 查询)
      */
-    fun searchApps(keyword: String): Flux<AppListItem> {
+    fun searchApps(keyword: String, categoryId: Long? = null, limit: Int = 50): Flux<AppListItem> {
+        if (elasticsearchEnabled) {
+            return appSearchService.searchApps(keyword, categoryId, limit)
+                .flatMap { doc ->
+                    appRepository.findById(doc.id)
+                        .flatMap { toAppListItem(it) }
+                }
+                .onErrorResume { e ->
+                    logger.warn { "ES search failed, falling back to database: ${e.message}" }
+                    searchAppsFromDatabase(keyword)
+                }
+        }
+        return searchAppsFromDatabase(keyword)
+    }
+
+    /**
+     * 数据库搜索回退 (LIKE 查询)
+     */
+    private fun searchAppsFromDatabase(keyword: String): Flux<AppListItem> {
         return appRepository.searchByKeyword(keyword)
             .flatMap { toAppListItem(it) }
     }

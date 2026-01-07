@@ -81,13 +81,26 @@ data class App(
     var isFeatured: Boolean = false,
 
     @Column("is_deleted")
-    var isDeleted: Boolean = false
+    var isDeleted: Boolean = false,
+
+    @Column("rejection_reason")
+    var rejectionReason: String? = null,  // 拒绝原因
+
+    @Column("submitted_at")
+    var submittedAt: java.time.LocalDateTime? = null,  // 提交审核时间
+
+    @Column("reviewed_at")
+    var reviewedAt: java.time.LocalDateTime? = null,  // 审核时间
+
+    @Column("reviewer_id")
+    var reviewerId: Long? = null  // 审核人 ID
 ) : BaseEntity()
 
 /**
  * App 状态枚举
  */
 enum class AppStatus {
+    DRAFT,      // 草稿
     PENDING,    // 待审核
     APPROVED,   // 已通过
     REJECTED,   // 已拒绝

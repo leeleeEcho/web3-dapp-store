@@ -73,6 +73,7 @@ private fun AppListItem.toAppItem(): AppItem {
 @Composable
 fun HomeScreen(
     onAppClick: (String) -> Unit,
+    onCategoryClick: (Long, String) -> Unit,
     onSearchClick: () -> Unit,
     onWalletClick: () -> Unit,
     onNotificationClick: () -> Unit,
@@ -282,25 +283,33 @@ fun HomeScreen(
                         Color(0xFF00B4D8),
                         Color(0xFFFF007A)
                     )
-                    val displayCategories = if (categories.isNotEmpty()) {
-                        categories.mapIndexed { index, cat ->
-                            cat.displayName to categoryColors[index % categoryColors.size]
+                    if (categories.isNotEmpty()) {
+                        items(categories.size) { index ->
+                            val cat = categories[index]
+                            val color = categoryColors[index % categoryColors.size]
+                            CategoryChip(
+                                name = cat.displayName,
+                                color = color,
+                                onClick = { onCategoryClick(cat.id, cat.displayName) }
+                            )
                         }
                     } else {
-                        listOf(
+                        // Fallback placeholder categories
+                        val placeholders = listOf(
                             "DeFi" to DIColors.Primary,
                             "NFT" to Color(0xFF9945FF),
                             "游戏" to Color(0xFF14F195),
                             "社交" to Color(0xFFFF6B9D),
                             "工具" to Color(0xFF00D4FF)
                         )
-                    }
-                    items(displayCategories) { (name, color) ->
-                        CategoryChip(
-                            name = name,
-                            color = color,
-                            onClick = { }
-                        )
+                        items(placeholders.size) { index ->
+                            val (name, color) = placeholders[index]
+                            CategoryChip(
+                                name = name,
+                                color = color,
+                                onClick = { }
+                            )
+                        }
                     }
                 }
             }

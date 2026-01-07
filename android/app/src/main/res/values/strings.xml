@@ -1,4 +1,106 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DI Store</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">首页</string>
+    <string name="nav_games">游戏</string>
+    <string name="nav_apps">应用</string>
+    <string name="nav_updates">更新</string>
+    <string name="nav_profile">我的</string>
+
+    <!-- Common Actions -->
+    <string name="action_download">下载</string>
+    <string name="action_install">安装</string>
+    <string name="action_open">打开</string>
+    <string name="action_update">更新</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_retry">重试</string>
+    <string name="action_search">搜索</string>
+    <string name="action_refresh">刷新</string>
+    <string name="action_more">更多</string>
+    <string name="action_manage">管理</string>
+    <string name="action_update_all">全部更新</string>
+
+    <!-- Home Screen -->
+    <string name="home_discover">发现</string>
+    <string name="home_featured">精选推荐</string>
+    <string name="home_trending">热门应用</string>
+    <string name="home_new">最新上架</string>
+
+    <!-- Search Screen -->
+    <string name="search_hint">搜索应用、游戏</string>
+    <string name="search_recent">最近搜索</string>
+    <string name="search_clear">清除历史</string>
+    <string name="search_no_results">未找到相关应用</string>
+    <string name="search_try_again">换个关键词试试</string>
+
+    <!-- App Detail Screen -->
+    <string name="detail_app_info">应用信息</string>
+    <string name="detail_version">版本</string>
+    <string name="detail_size">大小</string>
+    <string name="detail_package">包名</string>
+    <string name="detail_type">类型</string>
+    <string name="detail_type_web3">Web3 DApp</string>
+    <string name="detail_website">网站</string>
+    <string name="detail_developer">开发者</string>
+    <string name="detail_verified">已验证</string>
+    <string name="detail_load_failed">加载失败</string>
+
+    <!-- Category Screen -->
+    <string name="category_load_failed">加载失败</string>
+    <string name="category_empty">该分类暂无应用</string>
+    <string name="category_empty_hint">稍后再来看看吧</string>
+    <string name="category_app_count">%d 款应用</string>
+    <string name="category_back">返回</string>
+
+    <!-- Games Screen -->
+    <string name="games_featured">精选游戏</string>
+    <string name="games_trending">热门游戏</string>
+
+    <!-- Updates Screen -->
+    <string name="updates_pending">待更新</string>
+    <string name="updates_recent">最近更新</string>
+    <string name="updates_all_up_to_date">所有应用已是最新版本</string>
+    <string name="updates_latest_version">已是最新版本</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_installed">已安装</string>
+    <string name="profile_favorites">收藏</string>
+    <string name="profile_history">历史</string>
+    <string name="profile_reviews">评价</string>
+    <string name="profile_recent">最近使用</string>
+    <string name="profile_settings">账户与设置</string>
+    <string name="profile_wallet">钱包管理</string>
+    <string name="profile_wallet_desc">查看资产、交易记录</string>
+    <string name="profile_notifications">通知设置</string>
+    <string name="profile_notifications_desc">应用更新、交易提醒</string>
+    <string name="profile_security">安全中心</string>
+    <string name="profile_security_desc">密码、生物识别</string>
+    <string name="profile_language">语言</string>
+    <string name="profile_language_value">简体中文</string>
+    <string name="profile_about">关于</string>
+    <string name="profile_help">帮助与反馈</string>
+
+    <!-- Wallet Screen -->
+    <string name="wallet_title">钱包</string>
+    <string name="wallet_connect">连接钱包</string>
+    <string name="wallet_not_connected">未连接钱包</string>
+    <string name="wallet_connect_hint">连接您的 Web3 钱包以查看资产</string>
+
+    <!-- Categories -->
+    <string name="category_all">全部</string>
+    <string name="category_defi">DeFi</string>
+    <string name="category_nft">NFT</string>
+    <string name="category_wallet">钱包</string>
+    <string name="category_tools">工具</string>
+    <string name="category_social">社交</string>
+    <string name="category_dao">DAO</string>
+    <string name="category_gaming">游戏</string>
+
+    <!-- Error Messages -->
+    <string name="error_network">网络连接失败</string>
+    <string name="error_unknown">未知错误</string>
+    <string name="error_load_failed">加载失败</string>
+    <string name="error_load_more_failed">加载更多失败</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.web3store.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -28,21 +29,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.web3store.R
 import com.web3store.ui.theme.DIColors
 
 enum class BottomNavItem(
-    val label: String,
+    @StringRes val labelResId: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
     val route: String
 ) {
-    Home("首页", Icons.Filled.Home, Icons.Outlined.Home, "home"),
-    Games("游戏", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports, "games"),
-    Apps("应用", Icons.Filled.Apps, Icons.Outlined.Apps, "apps"),
-    Updates("更新", Icons.Filled.Update, Icons.Outlined.Update, "updates"),
-    Profile("我的", Icons.Filled.Person, Icons.Outlined.Person, "profile")
+    Home(R.string.nav_home, Icons.Filled.Home, Icons.Outlined.Home, "home"),
+    Games(R.string.nav_games, Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports, "games"),
+    Apps(R.string.nav_apps, Icons.Filled.Apps, Icons.Outlined.Apps, "apps"),
+    Updates(R.string.nav_updates, Icons.Filled.Update, Icons.Outlined.Update, "updates"),
+    Profile(R.string.nav_profile, Icons.Filled.Person, Icons.Outlined.Person, "profile")
 }
 
 @Composable
@@ -59,6 +62,7 @@ fun DIBottomNavigation(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()  // 添加系统导航栏内边距
                 .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -95,6 +99,8 @@ private fun DIBottomNavItem(
         label = "color"
     )
 
+    val label = stringResource(item.labelResId)
+
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -109,7 +115,7 @@ private fun DIBottomNavItem(
     ) {
         Icon(
             imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-            contentDescription = item.label,
+            contentDescription = label,
             modifier = Modifier
                 .size(24.dp)
                 .scale(animatedScale),
@@ -117,7 +123,7 @@ private fun DIBottomNavItem(
         )
 
         Text(
-            text = item.label,
+            text = label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             color = animatedColor

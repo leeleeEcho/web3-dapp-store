@@ -47,8 +47,15 @@ dependencies {
     // Web3
     implementation("org.web3j:core:4.10.3")
 
+    // Google API Client (for ID Token verification)
+    implementation("com.google.api-client:google-api-client:2.2.0")
+
     // MinIO
     implementation("io.minio:minio:8.5.7")
+
+    // Elasticsearch
+    implementation("co.elastic.clients:elasticsearch-java:8.11.0")
+    implementation("jakarta.json:jakarta.json-api:2.1.3")
 
     // Logging
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")

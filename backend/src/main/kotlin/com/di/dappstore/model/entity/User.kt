@@ -4,12 +4,18 @@ import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 
 /**
- * 用户实体
+ * 用户实体 - 支持 Google OAuth 和钱包双认证
  */
 @Table("users")
 data class User(
     @Column("wallet_address")
-    val walletAddress: String,
+    var walletAddress: String? = null,
+
+    @Column("google_id")
+    var googleId: String? = null,
+
+    @Column("auth_provider")
+    var authProvider: AuthProvider = AuthProvider.WALLET,
 
     @Column("username")
     var username: String? = null,
@@ -32,6 +38,14 @@ data class User(
     @Column("nonce")
     var nonce: String? = null  // 用于钱包签名验证
 ) : BaseEntity()
+
+/**
+ * 认证提供者枚举
+ */
+enum class AuthProvider {
+    GOOGLE,     // Google OAuth
+    WALLET      // 钱包签名
+}
 
 /**
  * 用户角色枚举

@@ -90,6 +90,24 @@ interface DAppStoreApi {
     @POST("api/v1/auth/login")
     suspend fun login(@Body request: WalletLoginRequest): ApiResponse<AuthResponseDto>
 
+    /**
+     * Google 登录
+     */
+    @POST("api/v1/auth/google")
+    suspend fun loginWithGoogle(@Body request: GoogleLoginRequest): ApiResponse<AuthResponseDto>
+
+    /**
+     * 获取当前用户信息
+     */
+    @GET("api/v1/auth/me")
+    suspend fun getCurrentUser(): ApiResponse<UserDto>
+
+    /**
+     * 登出
+     */
+    @POST("api/v1/auth/logout")
+    suspend fun logout(): ApiResponse<Unit>
+
     // ==================== Health ====================
 
     /**

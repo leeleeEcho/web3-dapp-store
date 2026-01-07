@@ -2,7 +2,7 @@ package com.di.dappstore.controller
 
 import com.di.dappstore.model.vo.ApiResponse
 import com.di.dappstore.model.vo.CategorySummary
-import com.di.dappstore.service.CategoryService
+import com.di.dappstore.service.CachedAppService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -14,13 +14,13 @@ import reactor.core.publisher.Mono
 @RequestMapping("/api/v1/categories")
 @Tag(name = "Categories", description = "应用分类相关接口")
 class CategoryController(
-    private val categoryService: CategoryService
+    private val cachedAppService: CachedAppService
 ) {
 
     @GetMapping
-    @Operation(summary = "获取所有分类", description = "获取所有可用的应用分类")
+    @Operation(summary = "获取所有分类", description = "获取所有可用的应用分类 (缓存1小时)")
     fun getAllCategories(): Mono<ApiResponse<List<CategorySummary>>> {
-        return categoryService.getAllCategories()
+        return cachedAppService.getAllCategories()
             .collectList()
             .map { ApiResponse.success(it) }
     }

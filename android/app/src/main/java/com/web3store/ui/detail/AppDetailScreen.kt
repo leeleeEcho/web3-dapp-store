@@ -32,6 +32,7 @@ import coil.compose.AsyncImage
 import com.web3store.domain.model.AppDetail
 import com.web3store.ui.components.ChainBadge
 import com.web3store.ui.theme.DIColors
+import com.web3store.ui.viewmodel.ActionButtonState
 import com.web3store.ui.viewmodel.AppDetailUiState
 import com.web3store.ui.viewmodel.AppDetailViewModel
 
@@ -114,9 +115,9 @@ fun AppDetailScreen(
                     item {
                         AppHeaderSection(
                             app = app,
-                            isDownloading = uiState.isDownloading,
-                            downloadProgress = uiState.downloadProgress,
-                            onInstallClick = { viewModel.startDownload() }
+                            buttonState = uiState.buttonState,
+                            onButtonClick = { viewModel.onPrimaryButtonClick() },
+                            onCancelClick = { viewModel.cancelDownload() }
                         )
                     }
 
@@ -205,9 +206,9 @@ private fun DetailTopBar(
 @Composable
 private fun AppHeaderSection(
     app: AppDetail,
-    isDownloading: Boolean,
-    downloadProgress: Float,
-    onInstallClick: () -> Unit,
+    buttonState: ActionButtonState,
+    onButtonClick: () -> Unit,
+    onCancelClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -303,44 +304,87 @@ private fun AppHeaderSection(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Install Button with progress
-        if (isDownloading) {
-            Column {
-                @Suppress("DEPRECATION")
-                LinearProgressIndicator(
-                    progress = downloadProgress,
+        // Action Button based on state
+        when (buttonState) {
+            is ActionButtonState.Downloading -> {
+                Column {
+                    @Suppress("DEPRECATION")
+                    LinearProgressIndicator(
+                        progress = buttonState.progress,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = DIColors.Primary,
+                        trackColor = DIColors.Card
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "下载中 ${(buttonState.progress * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DIColors.TextSecondary
+                        )
+                        TextButton(onClick = onCancelClick) {
+                            Text(
+                                text = "取消",
+                                color = DIColors.Primary
+                            )
+                        }
+                    }
+                }
+            }
+            is ActionButtonState.Installing -> {
+                Column {
+                    @Suppress("DEPRECATION")
+                    LinearProgressIndicator(
+                        progress = buttonState.progress,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = DIColors.Primary,
+                        trackColor = DIColors.Card
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "安装中...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DIColors.TextSecondary,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+            }
+            else -> {
+                val (buttonText, buttonColor) = when (buttonState) {
+                    is ActionButtonState.Download -> "下载" to DIColors.Primary
+                    is ActionButtonState.Install -> "安装" to DIColors.Primary
+                    is ActionButtonState.Open -> "打开" to Color(0xFF4CAF50)
+                    is ActionButtonState.Update -> "更新" to DIColors.Primary
+                    else -> "下载" to DIColors.Primary
+                }
+
+                Button(
+                    onClick = onButtonClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                    color = DIColors.Primary,
-                    trackColor = DIColors.Card
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "下载中 ${(downloadProgress * 100).toInt()}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = DIColors.TextSecondary,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-        } else {
-            Button(
-                onClick = onInstallClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DIColors.Primary,
-                    contentColor = DIColors.Background
-                )
-            ) {
-                Text(
-                    text = "安装应用",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = buttonColor,
+                        contentColor = DIColors.Background
+                    )
+                ) {
+                    Text(
+                        text = buttonText,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

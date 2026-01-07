@@ -1,5 +1,7 @@
 package com.web3store.di
 
+import com.web3store.BuildConfig
+import com.web3store.data.remote.AuthInterceptor
 import com.web3store.data.remote.api.DAppStoreApi
 import dagger.Module
 import dagger.Provides
@@ -8,6 +10,8 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -16,8 +20,16 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // 开发环境使用本机地址，模拟器用 10.0.2.2，真机用电脑 IP
-    private const val BASE_URL = "http://10.0.2.2:9000/"
+    // API 地址从 BuildConfig 读取，debug/release 有不同值
+    private val BASE_URL: String = BuildConfig.API_BASE_URL
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setLenient()
+            .create()
+    }
 
     @Provides
     @Singleton
@@ -29,8 +41,12 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        authInterceptor: AuthInterceptor
+    ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)  // Auth 拦截器优先
             .addInterceptor(loggingInterceptor)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
@@ -47,11 +63,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 

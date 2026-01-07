@@ -1,8 +1,18 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
     kotlin("kapt")
+}
+
+// 读取 local.properties
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
 }
 
 android {
@@ -23,11 +33,29 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 开发环境: 真机用电脑局域网 IP
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.3.104:9000/\"")
+            // Google OAuth Web Client ID (从 local.properties 读取)
+            buildConfigField(
+                "String",
+                "GOOGLE_SERVER_CLIENT_ID",
+                "\"${localProperties.getProperty("GOOGLE_SERVER_CLIENT_ID", "")}\""
+            )
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+            )
+            // 生产环境 API 地址
+            buildConfigField("String", "API_BASE_URL", "\"https://api.di.xyz/\"")
+            // Google OAuth Web Client ID
+            buildConfigField(
+                "String",
+                "GOOGLE_SERVER_CLIENT_ID",
+                "\"${localProperties.getProperty("GOOGLE_SERVER_CLIENT_ID", "")}\""
             )
         }
     }
@@ -44,6 +72,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -102,6 +131,17 @@ dependencies {
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // Google Sign-In with Credential Manager
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    // WorkManager for background downloads
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    kapt("androidx.hilt:hilt-compiler:1.1.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

@@ -10,9 +10,10 @@ INSERT INTO categories (name, display_name, description, icon_name, sort_order) 
 ('other', '其他', '其他 Web3 应用', 'more_horiz', 8);
 
 -- 创建测试用户
-INSERT INTO users (wallet_address, username, role, nonce) VALUES
-('0x1234567890abcdef1234567890abcdef12345678', 'TestUser', 'USER', 'test-nonce-123'),
-('0xabcdefabcdefabcdefabcdefabcdefabcdefabcd', 'TestDeveloper', 'DEVELOPER', 'dev-nonce-456');
+INSERT INTO users (wallet_address, auth_provider, username, role, nonce) VALUES
+('0x1234567890abcdef1234567890abcdef12345678', 'WALLET', 'TestUser', 'USER', 'test-nonce-123'),
+('0xabcdefabcdefabcdefabcdefabcdefabcdefabcd', 'WALLET', 'TestDeveloper', 'DEVELOPER', 'dev-nonce-456'),
+('0xadmin0000000000000000000000000000000000', 'WALLET', 'TestAdmin', 'ADMIN', 'admin-nonce-789');
 
 -- 创建测试开发者
 INSERT INTO developers (user_id, company_name, contact_email, description, is_verified, verification_status) VALUES

@@ -4,6 +4,7 @@ import com.di.dappstore.model.dto.DeveloperRegistrationRequest
 import com.di.dappstore.model.dto.UpdateDeveloperRequest
 import com.di.dappstore.model.entity.Developer
 import com.di.dappstore.model.vo.ApiResponse
+import com.di.dappstore.security.SecurityUtils
 import com.di.dappstore.service.DeveloperService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -20,14 +21,14 @@ class DeveloperController(
 ) {
 
     @PostMapping("/register")
-    @Operation(summary = "注册为开发者", description = "普通用户注册成为开发者")
+    @Operation(summary = "注册为开发者", description = "普通用户注册成为开发者（需要登录）")
     fun registerDeveloper(
         @Valid @RequestBody request: DeveloperRegistrationRequest
-        // TODO: 从认证上下文获取 userId
     ): Mono<ApiResponse<Developer>> {
-        // 暂时使用固定的 userId，后续从 JWT 中获取
-        val userId = 1L
-        return developerService.registerDeveloper(userId, request)
+        return SecurityUtils.getCurrentUserId()
+            .flatMap { userId ->
+                developerService.registerDeveloper(userId, request)
+            }
             .map { ApiResponse.success(it, "注册成功") }
             .onErrorResume { e ->
                 Mono.just(ApiResponse.error(e.message ?: "注册失败", -1))
@@ -35,14 +36,17 @@ class DeveloperController(
     }
 
     @GetMapping("/me")
-    @Operation(summary = "获取当前开发者信息", description = "获取当前登录用户的开发者信息")
-    fun getCurrentDeveloper(
-        // TODO: 从认证上下文获取 userId
-    ): Mono<ApiResponse<Developer>> {
-        val userId = 1L
-        return developerService.getDeveloperByUserId(userId)
+    @Operation(summary = "获取当前开发者信息", description = "获取当前登录用户的开发者信息（需要登录）")
+    fun getCurrentDeveloper(): Mono<ApiResponse<Developer>> {
+        return SecurityUtils.getCurrentUserId()
+            .flatMap { userId ->
+                developerService.getDeveloperByUserId(userId)
+            }
             .map { ApiResponse.success(it) }
-            .defaultIfEmpty(ApiResponse.error("您还不是开发者", 404))
+            .switchIfEmpty(Mono.just(ApiResponse.error("您还不是开发者", 404)))
+            .onErrorResume { e ->
+                Mono.just(ApiResponse.error(e.message ?: "获取失败", -1))
+            }
     }
 
     @GetMapping("/{id}")
@@ -56,14 +60,18 @@ class DeveloperController(
     }
 
     @PutMapping("/me")
-    @Operation(summary = "更新开发者信息", description = "更新当前开发者的信息")
+    @Operation(summary = "更新开发者信息", description = "更新当前开发者的信息（需要登录）")
     fun updateDeveloper(
         @Valid @RequestBody request: UpdateDeveloperRequest
-        // TODO: 从认证上下文获取 userId
     ): Mono<ApiResponse<Developer>> {
-        val userId = 1L
-        return developerService.updateDeveloper(userId, request)
+        return SecurityUtils.getCurrentUserId()
+            .flatMap { userId ->
+                developerService.updateDeveloper(userId, request)
+            }
             .map { ApiResponse.success(it, "更新成功") }
-            .defaultIfEmpty(ApiResponse.error("开发者不存在", 404))
+            .switchIfEmpty(Mono.just(ApiResponse.error("开发者不存在", 404)))
+            .onErrorResume { e ->
+                Mono.just(ApiResponse.error(e.message ?: "更新失败", -1))
+            }
     }
 }

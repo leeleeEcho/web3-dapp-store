@@ -1,0 +1,80 @@
+# Production environment configuration
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:web3store}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    pool:
+      initial-size: ${DB_POOL_INITIAL:10}
+      max-size: ${DB_POOL_MAX:50}
+      max-idle-time: 30m
+
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5s
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://elasticsearch:9200}
+    username: ${ELASTICSEARCH_USERNAME:}
+    password: ${ELASTICSEARCH_PASSWORD:}
+
+  h2:
+    console:
+      enabled: false
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000}
+
+  storage:
+    type: minio
+    bucket:
+      apk: dappstore-apks
+      icon: dappstore-icons
+      screenshot: dappstore-screenshots
+
+  elasticsearch:
+    enabled: ${ELASTICSEARCH_ENABLED:true}
+    sync-on-startup: ${ELASTICSEARCH_SYNC_ON_STARTUP:true}
+
+logging:
+  level:
+    root: INFO
+    com.di.dappstore: INFO
+    org.springframework.r2dbc: WARN
+    io.r2dbc: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    redis:
+      enabled: true

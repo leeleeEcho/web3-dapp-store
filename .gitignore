@@ -63,3 +63,4 @@ refs/solana-mwa/
 refs/wallet-core/
 refs/walletconnect-kotlin/
 refs/trust-web3-provider/
+docs/client_secret_*.json

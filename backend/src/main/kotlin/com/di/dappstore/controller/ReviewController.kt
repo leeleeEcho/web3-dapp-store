@@ -4,6 +4,7 @@ import com.di.dappstore.model.dto.CreateReviewRequest
 import com.di.dappstore.model.vo.ApiResponse
 import com.di.dappstore.model.vo.PageResponse
 import com.di.dappstore.model.vo.ReviewVo
+import com.di.dappstore.security.SecurityUtils
 import com.di.dappstore.service.ReviewService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -31,15 +32,15 @@ class ReviewController(
     }
 
     @PostMapping("/apps/{appId}/reviews")
-    @Operation(summary = "提交评论", description = "为应用提交评论")
+    @Operation(summary = "提交评论", description = "为应用提交评论（需要登录）")
     fun createReview(
         @Parameter(description = "应用ID") @PathVariable appId: Long,
         @Valid @RequestBody request: CreateReviewRequest
-        // TODO: 从认证上下文获取 userId
     ): Mono<ApiResponse<Unit>> {
-        // 暂时使用固定的 userId，后续从 JWT 中获取
-        val userId = 1L
-        return reviewService.createReview(appId, userId, request)
+        return SecurityUtils.getCurrentUserId()
+            .flatMap { userId ->
+                reviewService.createReview(appId, userId, request)
+            }
             .map { ApiResponse.success(Unit, "评论已提交") }
             .onErrorResume { e ->
                 Mono.just(ApiResponse.error(e.message ?: "评论提交失败", -1))

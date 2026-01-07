@@ -1,27 +1,32 @@
 -- DApp Store 数据库 Schema
--- 支持 H2 (开发) 和 PostgreSQL (生产)
+-- PostgreSQL 版本
 
--- 用户表
+-- 用户表 (支持 Google OAuth 和钱包双认证)
 CREATE TABLE IF NOT EXISTS users (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    wallet_address VARCHAR(255) NOT NULL UNIQUE,
+    id BIGSERIAL PRIMARY KEY,
+    wallet_address VARCHAR(255) UNIQUE,           -- 钱包地址（可选）
+    google_id VARCHAR(255) UNIQUE,                -- Google 用户 ID（可选）
+    auth_provider VARCHAR(50) DEFAULT 'WALLET',   -- 认证提供者: GOOGLE, WALLET
     username VARCHAR(100),
     email VARCHAR(255),
     avatar_url VARCHAR(500),
     role VARCHAR(50) DEFAULT 'USER',
     is_active BOOLEAN DEFAULT TRUE,
     last_login_at TIMESTAMP,
-    nonce VARCHAR(100),
+    nonce VARCHAR(100),                           -- 用于钱包签名验证
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- 至少需要一种认证方式
+    CONSTRAINT chk_auth_method CHECK (wallet_address IS NOT NULL OR google_id IS NOT NULL)
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_wallet ON users(wallet_address);
+CREATE INDEX IF NOT EXISTS idx_users_google ON users(google_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- 开发者表
 CREATE TABLE IF NOT EXISTS developers (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE,
     company_name VARCHAR(200),
     website_url VARCHAR(500),
@@ -42,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_developers_email ON developers(contact_email);
 
 -- 分类表
 CREATE TABLE IF NOT EXISTS categories (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     display_name VARCHAR(200) NOT NULL,
     description TEXT,
@@ -58,7 +63,7 @@ CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
 
 -- 应用表
 CREATE TABLE IF NOT EXISTS apps (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     package_name VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
     description TEXT,
@@ -81,13 +86,18 @@ CREATE TABLE IF NOT EXISTS apps (
     download_count BIGINT DEFAULT 0,
     rating_average DOUBLE PRECISION DEFAULT 0,
     rating_count BIGINT DEFAULT 0,
-    status VARCHAR(50) DEFAULT 'PENDING',
+    status VARCHAR(50) DEFAULT 'DRAFT',
     is_featured BOOLEAN DEFAULT FALSE,
     is_deleted BOOLEAN DEFAULT FALSE,
+    rejection_reason TEXT,
+    submitted_at TIMESTAMP,
+    reviewed_at TIMESTAMP,
+    reviewer_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (developer_id) REFERENCES developers(id),
-    FOREIGN KEY (category_id) REFERENCES categories(id)
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (reviewer_id) REFERENCES users(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_apps_package ON apps(package_name);
@@ -99,7 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_apps_rating ON apps(rating_average DESC);
 
 -- 截图表
 CREATE TABLE IF NOT EXISTS screenshots (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     app_id BIGINT NOT NULL,
     image_url VARCHAR(500) NOT NULL,
     sort_order INT DEFAULT 0,
@@ -114,7 +124,7 @@ CREATE INDEX IF NOT EXISTS idx_screenshots_app ON screenshots(app_id);
 
 -- 评论表
 CREATE TABLE IF NOT EXISTS reviews (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     app_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),

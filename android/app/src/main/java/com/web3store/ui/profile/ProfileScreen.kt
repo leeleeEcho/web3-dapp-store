@@ -15,13 +15,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import com.web3store.data.remote.dto.UserDto
+import com.web3store.data.repository.AuthState
 import com.web3store.ui.theme.DIColors
+import com.web3store.ui.viewmodel.AuthViewModel
 
 data class InstalledApp(
     val id: String,
@@ -36,8 +44,11 @@ fun ProfileScreen(
     onWalletClick: () -> Unit,
     onAppClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onLoginClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
+    val authState by authViewModel.authState.collectAsState()
     val installedApps = remember {
         listOf(
             InstalledApp("1", "MetaMask", "刚刚使用", Color(0xFFF6851B)),
@@ -81,13 +92,20 @@ fun ProfileScreen(
                 .padding(paddingValues),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // Wallet Card
+            // User/Login Card
             item {
-                WalletCard(
-                    address = "0x1234...5678",
-                    balance = "$12,345.67",
-                    onClick = onWalletClick
-                )
+                when (val state = authState) {
+                    is AuthState.Authenticated -> {
+                        UserCard(
+                            user = state.user,
+                            onWalletClick = onWalletClick,
+                            onLogout = { authViewModel.logout() }
+                        )
+                    }
+                    else -> {
+                        LoginPromptCard(onLoginClick = onLoginClick)
+                    }
+                }
             }
 
             // Quick Actions
@@ -437,6 +455,189 @@ private fun MenuItemRow(
                 tint = DIColors.TextSecondary,
                 modifier = Modifier.size(20.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun UserCard(
+    user: UserDto,
+    onWalletClick: () -> Unit,
+    onLogout: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(DIColors.Primary, DIColors.Secondary)
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 用户头像
+                    if (user.avatarUrl != null) {
+                        AsyncImage(
+                            model = user.avatarUrl,
+                            contentDescription = "头像",
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = user.username ?: user.email ?: "用户",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (user.email != null) {
+                            Text(
+                                text = user.email,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.8f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Text(
+                            text = when (user.authProvider) {
+                                "GOOGLE" -> "Google 账号"
+                                "WALLET" -> "钱包登录"
+                                else -> user.authProvider
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 钱包按钮
+                    OutlinedButton(
+                        onClick = onWalletClick,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("钱包")
+                    }
+
+                    // 登出按钮
+                    OutlinedButton(
+                        onClick = onLogout,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Logout,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("登出")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoginPromptCard(onLoginClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clickable(onClick = onLoginClick),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(DIColors.Primary, DIColors.Secondary)
+                    )
+                )
+                .padding(24.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "登录账号",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "登录后可同步收藏、下载记录",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
     }
 }

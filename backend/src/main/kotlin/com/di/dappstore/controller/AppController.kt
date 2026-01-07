@@ -5,6 +5,7 @@ import com.di.dappstore.model.vo.AppDetail
 import com.di.dappstore.model.vo.AppListItem
 import com.di.dappstore.model.vo.PageResponse
 import com.di.dappstore.service.AppService
+import com.di.dappstore.service.CachedAppService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -15,7 +16,8 @@ import reactor.core.publisher.Mono
 @RequestMapping("/api/v1/apps")
 @Tag(name = "Apps", description = "DApp 应用相关接口")
 class AppController(
-    private val appService: AppService
+    private val appService: AppService,
+    private val cachedAppService: CachedAppService
 ) {
 
     @GetMapping
@@ -60,39 +62,39 @@ class AppController(
     }
 
     @GetMapping("/featured")
-    @Operation(summary = "获取推荐应用", description = "获取首页推荐的应用列表")
+    @Operation(summary = "获取推荐应用", description = "获取首页推荐的应用列表 (缓存10分钟)")
     fun getFeaturedApps(): Mono<ApiResponse<List<AppListItem>>> {
-        return appService.getFeaturedApps()
+        return cachedAppService.getFeaturedApps()
             .collectList()
             .map { ApiResponse.success(it) }
     }
 
     @GetMapping("/top-downloads")
-    @Operation(summary = "获取热门下载", description = "获取下载量最高的应用")
+    @Operation(summary = "获取热门下载", description = "获取下载量最高的应用 (缓存5分钟)")
     fun getTopDownloaded(
         @Parameter(description = "返回数量") @RequestParam(defaultValue = "20") limit: Int
     ): Mono<ApiResponse<List<AppListItem>>> {
-        return appService.getTopDownloaded(limit)
+        return cachedAppService.getTopDownloaded(limit)
             .collectList()
             .map { ApiResponse.success(it) }
     }
 
     @GetMapping("/top-rated")
-    @Operation(summary = "获取高分应用", description = "获取评分最高的应用")
+    @Operation(summary = "获取高分应用", description = "获取评分最高的应用 (缓存5分钟)")
     fun getTopRated(
         @Parameter(description = "返回数量") @RequestParam(defaultValue = "20") limit: Int
     ): Mono<ApiResponse<List<AppListItem>>> {
-        return appService.getTopRated(limit)
+        return cachedAppService.getTopRated(limit)
             .collectList()
             .map { ApiResponse.success(it) }
     }
 
     @GetMapping("/latest")
-    @Operation(summary = "获取最新应用", description = "获取最新上架的应用")
+    @Operation(summary = "获取最新应用", description = "获取最新上架的应用 (缓存5分钟)")
     fun getLatestApps(
         @Parameter(description = "返回数量") @RequestParam(defaultValue = "20") limit: Int
     ): Mono<ApiResponse<List<AppListItem>>> {
-        return appService.getLatestApps(limit)
+        return cachedAppService.getLatestApps(limit)
             .collectList()
             .map { ApiResponse.success(it) }
     }

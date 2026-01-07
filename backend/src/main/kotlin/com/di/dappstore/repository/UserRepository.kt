@@ -10,7 +10,11 @@ interface UserRepository : ReactiveCrudRepository<User, Long> {
 
     fun findByWalletAddress(walletAddress: String): Mono<User>
 
+    fun findByGoogleId(googleId: String): Mono<User>
+
     fun existsByWalletAddress(walletAddress: String): Mono<Boolean>
+
+    fun existsByGoogleId(googleId: String): Mono<Boolean>
 
     fun findByEmail(email: String): Mono<User>
 

@@ -18,6 +18,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.web3store.ui.apps.AppsScreen
+import com.web3store.ui.auth.LoginScreen
+import com.web3store.ui.category.CategoryScreen
 import com.web3store.ui.components.BottomNavItem
 import com.web3store.ui.components.DIBottomNavigation
 import com.web3store.ui.detail.AppDetailScreen
@@ -116,6 +118,9 @@ fun MainApp() {
                     onAppClick = { appId ->
                         navController.navigate("app/$appId")
                     },
+                    onCategoryClick = { categoryId, categoryName ->
+                        navController.navigate("category/$categoryId/${java.net.URLEncoder.encode(categoryName, "UTF-8")}")
+                    },
                     onSearchClick = {
                         navController.navigate("search")
                     },
@@ -188,6 +193,25 @@ fun MainApp() {
                     },
                     onSettingsClick = {
                         // Handle settings
+                    },
+                    onLoginClick = {
+                        navController.navigate("login")
+                    }
+                )
+            }
+
+            // Login
+            composable(
+                route = "login",
+                enterTransition = { slideInVertically(initialOffsetY = { it }) + fadeIn() },
+                exitTransition = { slideOutVertically(targetOffsetY = { it }) + fadeOut() }
+            ) {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.popBackStack()
+                    },
+                    onSkip = {
+                        navController.popBackStack()
                     }
                 )
             }
@@ -230,6 +254,22 @@ fun MainApp() {
                     appId = appId,
                     onBackClick = { navController.popBackStack() },
                     onInstallClick = { /* Handle install */ }
+                )
+            }
+
+            // Category
+            composable(
+                route = "category/{categoryId}/{categoryName}",
+                arguments = listOf(
+                    navArgument("categoryId") { type = NavType.LongType },
+                    navArgument("categoryName") { type = NavType.StringType }
+                ),
+                enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                exitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+            ) {
+                CategoryScreen(
+                    onAppClick = { appId -> navController.navigate("app/$appId") },
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }
