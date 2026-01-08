@@ -1859,3 +1859,181 @@ Phase 6 (开发者应用提交) 和 Phase 7 (管理员审核) 所有 API 功能�
 - ✅ 精选管理功能
 - ✅ 权限控制正确
 - ✅ 审核统计准确
+
+---
+
+## 2025-01-08: 真实 APK 测试环境搭建
+
+### 目标
+配置 8 个真实 Web3 应用的 APK 和图标，完成端到端下载安装测试
+
+### 应用清单
+
+| # | 应用 | 包名 | 版本 | APK 大小 |
+|---|------|------|------|----------|
+| 1 | TokenPocket | vip.mytokenpocket | 2.13.0 | 101 MB |
+| 2 | Trust Wallet | com.wallet.crypto.trustapp | 8.78.1 | 186 MB |
+| 3 | Telegram | org.telegram.messenger.web | 12.3.1 | 79 MB |
+| 4 | MetaMask | io.metamask | 7.61.5 | 204 MB |
+| 5 | OKX | com.okinc.okex.gp | 6.145.0 | 339 MB |
+| 6 | Binance | com.binance.dev | 3.8.4 | 279 MB |
+| 7 | X (Twitter) | com.twitter.android | 11.54.0 | 144 MB |
+| 8 | ave.ai | ai.ave.platform | 2.3.01 | 91 MB |
+
+**APK 总大小: 约 1.4 GB**
+
+### APK 来源
+
+| 应用 | 来源 |
+|------|------|
+| Telegram | telegram.org 官网直接下载 |
+| TokenPocket | tokenpocket.pro 官网直接下载 |
+| Trust Wallet | trustwallet.com 官网直接下载 |
+| MetaMask | GitHub Release (metamask-mobile) |
+| OKX, Binance, X, ave.ai | 用户提供 |
+
+### 存储架构
+
+```
+MinIO (端口 9100, localhost only)
+    │
+    ├── dappstore-apks/          # APK 文件
+    │   ├── aveai.apk
+    │   ├── binance.apk
+    │   ├── metamask.apk
+    │   ├── okx.apk
+    │   ├── telegram.apk
+    │   ├── tokenpocket.apk
+    │   ├── trustwallet.apk
+    │   └── x.apk
+    │
+    └── dappstore-icons/         # 应用图标
+        ├── aveai_icon.png       (1024x1024)
+        ├── binance_icon.png     (250x250)
+        ├── metamask_icon.png    (512x512)
+        ├── okx_icon.png         (2000x2000)
+        ├── telegram_icon.png    (512x512)
+        ├── tokenpocket_icon.png (200x200)
+        ├── trustwallet_icon.png (224x250)
+        └── x_icon.png           (512x512)
+```
+
+### 问题与解决
+
+#### 问题 1: MinIO 只绑定 localhost
+- **现象:** MinIO 在 macOS 上只监听 127.0.0.1，外部设备无法访问
+- **原因:** macOS 网络栈限制，`--address ":9100"` 不生效于 IPv4
+- **解决:** 使用 socat 端口转发
+  ```bash
+  socat TCP-LISTEN:9102,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:9100
+  ```
+- **结果:** 外部设备通过 `192.168.3.104:9102` 访问
+
+#### 问题 2: Telegram 包名不匹配
+- **现象:** 安装失败 `INSTALL_FAILED_INVALID_APK: inconsistent with org.telegram.messenger.web`
+- **原因:** APK 实际包名是 `org.telegram.messenger.web`，数据库配置为 `org.telegram.messenger`
+- **解决:** 更新 data.sql 中的包名
+  ```sql
+  -- 修改前
+  ('org.telegram.messenger', 'Telegram', ...)
+  -- 修改后
+  ('org.telegram.messenger.web', 'Telegram', ...)
+  ```
+
+#### 问题 3: 图标格式错误
+- **现象:** TokenPocket、Trust Wallet、X 图标显示异常
+- **原因:** 下载的是横幅图片而非方形图标
+  - TokenPocket: 1689x225 (横幅)
+  - Trust Wallet: 546x84 (横幅)
+  - X: 300x271 (不规则)
+- **解决:** 从可靠来源重新下载方形图标
+  - TokenPocket: CoinMarketCap (200x200)
+  - Trust Wallet: CoinGecko (224x250)
+  - X: icons8.com (512x512)
+
+### ADB 日志分析
+
+使用 ADB 实时监控应用日志：
+```bash
+adb logcat -v time | grep -iE "web3store|download|install|apk"
+```
+
+关键日志示例：
+```
+I/AppDetailViewModel: checkAppState: packageName=org.telegram.messenger.web, installedVersion=null
+D/AppDetailViewModel: installApk: apkFile=/.../org.telegram.messenger.web_12.3.1.apk, exists=true
+D/ApkInstaller: Session committed for org.telegram.messenger.web
+D/InstallerReceiver: User action required for org.telegram.messenger.web
+```
+
+### 服务配置
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| 后端 API | 9000 | Spring Boot |
+| MinIO | 9100 | 对象存储 (localhost) |
+| Socat 代理 | 9102 | MinIO 外部访问代理 |
+| MinIO Console | 9101 | Web 管理界面 |
+
+### data.sql 更新
+
+- 更新所有 URL 从 9100 改为 9102 (通过代理访问)
+- 修正 Telegram 包名
+- 添加正确的 APK 哈希和大小
+
+### 测试验证
+
+```bash
+# API 验证
+curl http://localhost:9000/api/v1/apps
+# 返回 8 个应用
+
+# APK 下载验证
+curl -I http://127.0.0.1:9102/dappstore-apks/telegram.apk
+# HTTP 200, 83MB
+
+# 图标验证
+curl -I http://127.0.0.1:9102/dappstore-icons/x_icon.png
+# HTTP 200, 8KB
+```
+
+### Git 提交
+
+```
+commit 45bf5cb
+fix: Update app data with real APKs and correct package names
+
+- Add 8 real apps: TokenPocket, Trust Wallet, Telegram, MetaMask, OKX, Binance, X, ave.ai
+- Fix Telegram package name: org.telegram.messenger -> org.telegram.messenger.web
+- Update APK URLs to use port 9102 (socat proxy for external access)
+- Add correct APK hashes and sizes for all apps
+- Remove placeholder apps (Uniswap, 1inch)
+```
+
+---
+
+## 开发状态总结
+
+### 已完成功能
+
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| **后端** | Spring Boot 项目框架 | ✅ 完成 |
+| | REST API 完整实现 | ✅ 完成 |
+| | MinIO 文件存储 | ✅ 完成 |
+| | Google OAuth + 钱包认证 | ✅ 完成 |
+| | 开发者应用提交 API | ✅ 完成 |
+| | 管理员审核 API | ✅ 完成 |
+| | **真实 APK 测试数据** | ✅ 完成 |
+| **Android** | Jetpack Compose UI | ✅ 完成 |
+| | APK 下载安装 | ✅ 完成 |
+| | 搜索 + 分类浏览 | ✅ 完成 |
+| | **端到端测试通过** | ✅ 完成 |
+
+### 测试环境
+
+| 组件 | 地址 |
+|------|------|
+| 后端 API | http://192.168.3.104:9000 |
+| MinIO 代理 | http://192.168.3.104:9102 |
+| Android 测试机 | ProMax250815001023 (ADB 连接) |
